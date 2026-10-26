@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>狼人在身邊：視覺解謎 50 案</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Noto+Serif+TC:wght@600;900&display=swap');
+    body {
+      font-family: 'Noto Serif TC', serif;
+      user-select: none;
+      -webkit-user-select: none;
+      background: radial-gradient(circle at 50% 20%, #1e1b4b 0%, #0f172a 60%, #050814 100%);
+      min-height: 100vh;
+      color: #e2e8f0;
+    }
+    .stamp-badge {
+      animation: stamp-pop 0.18s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+    @keyframes stamp-pop {
+      0% { transform: scale(2.2) rotate(-15deg); opacity: 0; }
+      100% { transform: scale(1) rotate(-6deg); opacity: 0.95; }
+    }
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+  </style>
+</head>
+<body class="flex flex-col items-center p-2 sm:p-4">
+
+  <!-- 頂部狀態列 -->
+  <header class="w-full max-w-4xl flex items-center justify-between bg-slate-900/80 backdrop-blur-md border border-slate-700/80 px-4 py-2.5 rounded-2xl shadow-xl mb-3">
+    <div class="flex items-center gap-3">
+      <button onclick="toggleLevelModal()" class="px-3 py-1.5 bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-500/40 rounded-xl text-amber-300 font-bold text-sm flex items-center gap-1.5 transition">
+        <span>📜 案卷</span>
+        <span id="headerCaseNum" class="text-white font-mono font-black">第 1 案</span>
+      </button>
+      <div class="flex items-center gap-1.5 text-xs bg-slate-800/80 px-2.5 py-1.5 rounded-lg border border-slate-700 text-slate-300">
+        <span id="headerChapterName" class="text-amber-400 font-bold">第一章</span>
+      </div>
+    </div>
+
+    <!-- 查驗鏡道具 & 狼人配額指示 -->
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-1 bg-red-950/60 border border-red-800/60 px-3 py-1 rounded-xl text-red-200 text-xs font-bold">
+        <span>🐺 潛伏狼人:</span>
+        <span id="headerWolfQuota" class="text-sm font-mono text-red-400 font-black">1</span>
+        <span>人</span>
+      </div>
+      <button id="inspectToolBtn" onclick="activateInspectorTool()" class="px-3 py-1.5 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-black rounded-xl text-xs flex items-center gap-1 shadow-lg shadow-amber-600/30 transition transform active:scale-95">
+        <span>🔍 查驗鏡</span>
+        <span id="inspectCountBadge" class="bg-slate-950 text-amber-300 px-1.5 py-0.2 rounded-full font-mono text-[10px]">1</span>
+      </button>
+      <button onclick="toggleAudio()" id="audioBtn" class="text-slate-400 hover:text-white text-base p-1">🔊</button>
+    </div>
+  </header>
+
+  <!-- 案情簡介 & 現場簡報 -->
+  <div class="w-full max-w-4xl bg-slate-900/60 border border-slate-800 p-3 rounded-2xl mb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-inner">
+    <div>
+      <h2 id="caseTitle" class="text-amber-400 font-black text-base flex items-center gap-2">
+        <span>案件載入中...</span>
+      </h2>
+      <p id="caseScenario" class="text-xs text-slate-400 mt-0.5">點擊卡片直接蓋章確認身份，圖示為現場取得的關鍵物證。</p>
+    </div>
+    <div class="flex items-center gap-2 self-end sm:self-auto">
+      <span class="text-[11px] text-slate-400">當前標記：</span>
+      <span class="text-xs bg-emerald-950 border border-emerald-600/50 text-emerald-400 px-2 py-0.5 rounded font-bold" id="statusGoodCount">好人: 0</span>
+      <span class="text-xs bg-rose-950 border border-rose-600/50 text-rose-400 px-2 py-0.5 rounded font-bold" id="statusWolfCount">狼人: 0</span>
+    </div>
+  </div>
+
+  <!-- 主遊戲卡牌展示區 -->
+  <main id="charactersContainer" class="w-full max-w-4xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5 mb-24">
+  </main>
+
+  <!-- 底部操作列 (結案審判提交) -->
+  <div class="fixed bottom-0 left-0 right-0 bg-slate-950/90 backdrop-blur-lg border-t border-slate-800 p-3 z-30 flex justify-center">
+    <div class="w-full max-w-4xl flex items-center justify-between gap-3 px-2">
+      <button onclick="resetCurrentDeductions()" class="px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-slate-300 text-xs font-bold hover:bg-slate-800 transition">
+        🔄 清空蓋章
+      </button>
+
+      <button onclick="submitVerdict()" class="flex-1 max-w-md py-3 rounded-xl bg-gradient-to-r from-red-700 via-rose-600 to-amber-600 hover:from-red-600 hover:to-amber-500 text-white font-black text-sm tracking-widest shadow-xl shadow-rose-900/40 transform active:scale-98 transition flex items-center justify-center gap-2">
+        <span>⚖️ 提交結案審判</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 案件選擇 Modal -->
+  <div id="levelModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3">
+    <div class="bg-slate-900 border border-slate-700 w-full max-w-2xl rounded-2xl p-5 shadow-2xl max-h-[85vh] flex flex-col">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div>
+          <h3 class="text-amber-400 font-bold text-lg">卷宗封印室（共 50 案）</h3>
+          <p class="text-xs text-slate-400 mt-0.5">選擇想要推理破譯的狼人懸案</p>
+        </div>
+        <button onclick="toggleLevelModal()" class="text-slate-400 hover:text-white text-xl p-1 font-mono">✕</button>
+      </div>
+
+      <!-- 章節選擇按鈕 -->
+      <div class="flex gap-2 overflow-x-auto py-2.5 border-b border-slate-800 text-xs" id="chapterTabs">
+        <button onclick="switchChapterTab(1)" class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-bold whitespace-nowrap">第 1 章 (1-10)</button>
+        <button onclick="switchChapterTab(2)" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">第 2 章 (11-20)</button>
+        <button onclick="switchChapterTab(3)" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">第 3 章 (21-30)</button>
+        <button onclick="switchChapterTab(4)" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">第 4 章 (31-40)</button>
+        <button onclick="switchChapterTab(5)" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">第 5 章 (41-50)</button>
+      </div>
+
+      <!-- 案件網格 -->
+      <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5 overflow-y-auto p-2 my-2" id="levelGrid">
+      </div>
+    </div>
+  </div>
+
+  <!-- 物證放大鏡預覽 Modal -->
+  <div id="evidenceModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-amber-600/40 max-w-sm w-full rounded-2xl p-5 text-center shadow-2xl relative">
+      <div id="evidenceModalIcon" class="text-5xl mb-3">🔍</div>
+      <h4 id="evidenceModalTitle" class="text-amber-400 font-bold text-base mb-1">物證檢驗</h4>
+      <p id="evidenceModalDesc" class="text-xs text-slate-300 leading-relaxed mb-4 bg-slate-950/50 p-3 rounded-xl border border-slate-800">
+        詳細物證描述
+      </p>
+      <button onclick="closeEvidenceModal()" class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition">
+        收起證物
+      </button>
+    </div>
+  </div>
+
+  <!-- 審判結果彈窗 -->
+  <div id="resultModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border-2 w-full max-w-md rounded-2xl p-6 text-center shadow-2xl relative" id="resultModalBox">
+      <div id="resultIcon" class="text-6xl mb-2 animate-bounce">🏆</div>
+      <h3 id="resultTitle" class="text-2xl font-black mb-1">結案成功！</h3>
+      <p id="resultSubtitle" class="text-xs text-slate-400 mb-4">真相大白，狼人已全數落網</p>
+
+      <div class="text-left bg-slate-950/80 border border-slate-800 rounded-xl p-3.5 mb-5 max-h-56 overflow-y-auto text-xs leading-relaxed text-slate-300 space-y-2">
+        <div class="text-amber-400 font-bold flex items-center gap-1 border-b border-slate-800 pb-1.5">
+          <span>🧠 偵探邏輯復盤筆記：</span>
+        </div>
+        <div id="resultProofText" class="text-[13px] text-slate-300">
+          詳細復盤鏈條
+        </div>
+      </div>
+
+      <div class="flex gap-2">
+        <button id="resultRetryBtn" onclick="closeResultModal()" class="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition">
+          重新審視
+        </button>
+        <button id="resultNextBtn" onclick="nextCase()" class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs shadow-lg transition">
+          前往下一案 ➔
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* =====================================================================
+       1. 經典角色 SVG 立繪圖庫
+       ===================================================================== */
+    const SVG_AVATARS = {
+      seer: `
+        <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+          <circle cx="50" cy="50" r="46" fill="#1e1b4b" stroke="#818cf8" stroke-width="2"/>
+          <path d="M25,75 Q50,40 75,75" fill="#4338ca"/>
+          <circle cx="50" cy="40" r="16" fill="#fed7aa"/>
+          <path d="M30,30 Q50,10 70,30 Q75,48 68,50 Q50,42 32,50 Z" fill="#312e81"/>
+          <circle cx="50" cy="72" r="13" fill="#67e8f9" opacity="0.85"/>
+          <circle cx="47" cy="69" r="4" fill="#ffffff" opacity="0.8"/>
+          <circle cx="50" cy="72" r="15" fill="none" stroke="#a5f3fc" stroke-width="1.5" stroke-dasharray="3,2"/>
+        </svg>`,
+      witch: `
+        <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+          <circle cx="50" cy="50" r="46" fill="#2e1065" stroke="#c084fc" stroke-width="2"/>
+          <path d="M25,75 Q50,45 75,75" fill="#581c87"/>
+          <circle cx="50" cy="42" r="15" fill="#fde047" opacity="0.9"/>
+          <path d="M20,38 L80,38 L50,8 Z" fill="#3b0764"/>
+          <ellipse cx="50" cy="38" rx="34" ry="7" fill="#2e1065"/>
+          <path d="M42,35 L58,35 L55,30 L45,30 Z" fill="#e879f9"/>
+          <path d="M45,72 L55,72 L57,82 L43,82 Z" fill="#22c55e" opacity="0.9"/>
+          <rect x="47" y="68" width="6" height="4" fill="#a855f7"/>
+        </svg>`,
+      hunter: `
+        <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+          <circle cx="50" cy="50" r="46" fill="#14532d" stroke="#4ade80" stroke-width="2"/>
+          <path d="M22,78 Q50,45 78,78" fill="#166534"/>
+          <circle cx="50" cy="40" r="16" fill="#fed7aa"/>
+          <path d="M28,32 Q50,18 72,32 L68,38 L32,38 Z" fill="#15803d"/>
+          <path d="M66,15 Q75,10 70,30" stroke="#f87171" stroke-width="3" fill="none"/>
+          <line x1="26" y1="52" x2="74" y2="76" stroke="#78350f" stroke-width="4"/>
+          <line x1="70" y1="73" x2="76" y2="78" stroke="#94a3b8" stroke-width="5"/>
+        </svg>`,
+      guard: `
+        <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+          <circle cx="50" cy="50" r="46" fill="#1e293b" stroke="#94a3b8" stroke-width="2"/>
+          <path d="M20,78 Q50,42 80,78" fill="#334155"/>
+          <circle cx="50" cy="38" r="17" fill="#64748b"/>
+          <rect x="40" y="34" width="20" height="4" fill="#0f172a"/>
+          <path d="M50,16 L50,26" stroke="#ef4444" stroke-width="4"/>
+          <path d="M38,58 Q50,54 62,58 Q64,74 50,84 Q36,74 38,58 Z" fill="#0284c7" stroke="#f8fafc" stroke-width="2"/>
+          <line x1="50" y1="60" x2="50" y2="80" stroke="#f8fafc" stroke-width="1.5"/>
+        </svg>`,
+      blacksmith: `
+        <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+          <circle cx="50" cy="50" r="46" fill="#451a03" stroke="#f97316" stroke-width="2"/>
+          <path d="M22,80 Q50,48 78,80" fill="#78350f"/>
+          <circle cx="50" cy="38" r="17" fill="#fdba74"/>
+          <path d="M32,27 Q50,18 68,27" stroke="#ea580c" stroke-width="4" fill="none"/>
+          <path d="M40,44 Q50,56 60,44" fill="#451a03"/>
+          <rect x="62" y="60" width="8" height="22" transform="rotate(-30 62 60)" fill="#78350f"/>
+          <rect x="62" y="52" width="16" height="10" transform="rotate(-30 62 52)" fill="#94a3b8"/>
+        </svg>`,
+      nun: `
+        <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+          <circle cx="50" cy="50" r="46" fill="#0f172a" stroke="#cbd5e1" stroke-width="2"/>
+          <path d="M25,80 Q50,52 75,80" fill="#1e293b"/>
+          <circle cx="50" cy="40" r="14" fill="#fde047" opacity="0.8"/>
+          <path d="M28,26 Q50,14 72,26 L76,62 L68,60 L68,36 L32,36 L32,60 L24,62 Z" fill="#090d16"/>
+          <rect x="36" y="26" width="28" height="6" fill="#f8fafc"/>
+          <path d="M50,62 L50,74 M45,66 L55,66" stroke="#fbbf24" stroke-width="2"/>
+        </svg>`,
+      idiot: `
+        <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+          <circle cx="50" cy="50" r="46" fill="#701a75" stroke="#f472b6" stroke-width="2"/>
+          <path d="M25,80 Q50,50 75,80" fill="#a21caf"/>
+          <circle cx="50" cy="42" r="16" fill="#fbcfe8"/>
+          <path d="M30,32 Q20,10 10,22 Q24,30 32,36" fill="#ec4899"/>
+          <circle cx="10" cy="22" r="4" fill="#fbbf24"/>
+          <path d="M70,32 Q80,10 90,22 Q76,30 68,36" fill="#8b5cf6"/>
+          <circle cx="90" cy="22" r="4" fill="#fbbf24"/>
+          <circle cx="50" cy="44" r="3.5" fill="#ef4444"/>
+        </svg>`,
+      werewolf: `
+        <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md animate-pulse">
+          <circle cx="50" cy="50" r="46" fill="#450a0a" stroke="#ef4444" stroke-width="2.5"/>
+          <path d="M20,82 Q50,45 80,82" fill="#7f1d1d"/>
+          <polygon points="26,18 36,36 20,38" fill="#1c1917" stroke="#dc2626" stroke-width="1.5"/>
+          <polygon points="74,18 64,36 80,38" fill="#1c1917" stroke="#dc2626" stroke-width="1.5"/>
+          <circle cx="50" cy="46" r="22" fill="#1c1917"/>
+          <polygon points="36,44 44,46 38,48" fill="#ef4444"/>
+          <polygon points="64,44 56,46 62,48" fill="#ef4444"/>
+          <path d="M42,56 Q50,68 58,56" stroke="#fee2e2" stroke-width="2" fill="#450a0a"/>
+          <polygon points="45,56 47,62 49,56" fill="#fff"/>
+          <polygon points="51,56 53,62 55,56" fill="#fff"/>
+        </svg>`
+    };
+
+    /* =====================================================================
+       2. 50 關卡題庫數據庫
+       ===================================================================== */
+    const GAME_CASES = [];
+
+    (function generate50Cases() {
+      const rolesPool = [
+        { roleId: 'seer', name: '預言家·艾莉', avatar: 'seer' },
+        { roleId: 'witch', name: '女巫·瑪格麗特', avatar: 'witch' },
+        { roleId: 'hunter', name: '獵人·雷諾', avatar: 'hunter' },
+        { roleId: 'guard', name: '守衛·亞瑟', avatar: 'guard' },
+        { roleId: 'blacksmith', name: '鐵匠·巴隆', avatar: 'blacksmith' },
+        { roleId: 'nun', name: '修女·賽拉', avatar: 'nun' },
+        { roleId: 'idiot', name: '弄臣·皮耶', avatar: 'idiot' }
+      ];
+
+      for (let i = 1; i <= 50; i++) {
+        let chapter = 1;
+        let wolfCount = 1;
+        let charCount = 3;
+
+        if (i <= 10) { chapter = 1; wolfCount = 1; charCount = 3; }
+        else if (i <= 20) { chapter = 2; wolfCount = 1; charCount = 4; }
+        else if (i <= 30) { chapter = 3; wolfCount = 2; charCount = 4; }
+        else if (i <= 40) { chapter = 4; wolfCount = 2; charCount = 5; }
+        else { chapter = 5; wolfCount = 2; charCount = 5; }
+
+        const chars = [];
+        const selectedRoles = [...rolesPool].sort(() => 0.5 - Math.sin(i * 3.7)).slice(0, charCount);
+
+        const wolfIndices = [];
+        if (wolfCount === 1) {
+          wolfIndices.push((i * 2 + 1) % charCount);
+        } else {
+          wolfIndices.push(0);
+          wolfIndices.push((i % (charCount - 1)) + 1);
+        }
+
+        selectedRoles.forEach((role, idx) => {
+          const isWolf = wolfIndices.includes(idx);
+          let statement = "";
+          let evidences = [];
+
+          if (isWolf) {
+            statement = "我昨晚在安分休息，兇手絕對是其他座位的傢伙！";
+            evidences = [
+              { icon: '🩸', title: '微量狼毛', desc: '袖口殘留著未清理乾淨的銀灰色粗硬毛髮，散發野獸氣息。' },
+              { icon: '👟', title: '潮濕深泥', desc: '鞋底黏附著村外黑森林特有的紫腐泥，與發言聲稱在家睡覺不符。' }
+            ];
+          } else {
+            statement = "我敢向聖光起誓，我的作息與現場痕跡完全一致。";
+            evidences = [
+              { icon: '📜', title: '聖堂手諭', desc: '帶有不可偽造的神聖公證火漆印記，證明其清白。' },
+              { icon: '🛡️', title: '無暇衣物', desc: '全身上下乾淨齊整，未經歷過任何深夜撕咬搏鬥。' }
+            ];
+          }
+
+          chars.push({
+            seat: idx + 1,
+            name: role.name,
+            avatarKey: role.avatar,
+            isWolf: isWolf,
+            quote: statement,
+            evidences: evidences
+          });
+        });
+
+        GAME_CASES.push({
+          id: i,
+          chapter: chapter,
+          chapterName: `第 ${chapter} 章 · ${['初心排查', '雙面博弈', '暗夜雙影', '血染深林', '終局裁判'][chapter - 1]}`,
+          title: `第 ${i} 案：${['古井微光', '鐵砧血痕', '深夜鐘塔', '失落銀彈', '魔藥倒映', '修道院裂縫', '血月之啼', '殘缺項圈', '偽裝者的呢喃', '霧隱密道'][ (i - 1) % 10 ]}`,
+          desc: `場上共有 ${charCount} 名嫌疑人，其中潛伏著 ${wolfCount} 隻狼人。點擊下方證物圖示查看線索，比對口供！`,
+          wolfCount: wolfCount,
+          characters: chars,
+          proof: `【結案復盤筆記】：\n經查驗物證，${chars.filter(c => c.isWolf).map(c => `${c.seat}號【${c.name}】`).join(' 與 ')} 身上檢驗出【微量狼毛】與【紫腐深泥】，徹底戳破其虛假的不在場聲明！其餘人持有聖堂公證物證，身份全為好人。`
+        });
+      }
+    })();
+
+    /* =====================================================================
+       3. 遊戲狀態核心與音效
+       ===================================================================== */
+    let currentCaseIndex = 0;
+    let userDeductions = {};
+    let inspectorRemaining = 1;
+    let isInspectorActive = false;
+    let soundEnabled = true;
+
+    const AudioEngine = {
+      ctx: null,
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContext();
+        }
+      },
+      playTone(freq, type, duration, gainLevel = 0.1) {
+        if (!soundEnabled) return;
+        this.init();
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+          gain.gain.setValueAtTime(gainLevel, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + duration);
+        } catch(e) {}
+      },
+      stampSound() { this.playTone(180, 'square', 0.1, 0.2); },
+      clueSound() { this.playTone(520, 'sine', 0.15, 0.15); },
+      victorySound() {
+        [440, 554, 659, 880].forEach((freq, idx) => {
+          setTimeout(() => this.playTone(freq, 'triangle', 0.3, 0.18), idx * 90);
+        });
+      },
+      defeatSound() {
+        [300, 260, 220, 180].forEach((freq, idx) => {
+          setTimeout(() => this.playTone(freq, 'sawtooth', 0.25, 0.2), idx * 100);
+        });
+      }
+    };
+
+    function toggleAudio() {
+      soundEnabled = !soundEnabled;
+      document.getElementById('audioBtn').innerText = soundEnabled ? '🔊' : '🔇';
+    }
+
+    /* =====================================================================
+       4. 畫面渲染與卡牌構築 (乾淨無衝突版本)
+       ===================================================================== */
+    function renderCurrentCase() {
+      const caseData = GAME_CASES[currentCaseIndex];
+      userDeductions = {};
+      inspectorRemaining = 1;
+      isInspectorActive = false;
+      updateInspectorUI();
+
+      document.getElementById('headerCaseNum').innerText = `第 ${caseData.id} 案`;
+      document.getElementById('headerChapterName').innerText = caseData.chapterName;
+      document.getElementById('headerWolfQuota').innerText = caseData.wolfCount;
+      document.getElementById('caseTitle').innerHTML = `<span>${caseData.title}</span>`;
+      document.getElementById('caseScenario').innerText = caseData.desc;
+
+      const container = document.getElementById('charactersContainer');
+      container.innerHTML = '';
+
+      caseData.characters.forEach((char, charIdx) => {
+        const card = document.createElement('div');
+        card.id = `char-card-${char.seat}`;
+        card.className = "relative bg-slate-900/90 border-2 border-slate-700/80 rounded-2xl p-3.5 shadow-xl transition-all duration-200 flex flex-col justify-between overflow-hidden";
+
+        const evidenceButtonsHtml = char.evidences.map((ev, evIdx) => `
+          <button onclick="handleEvidenceClick(${charIdx}, ${evIdx})" class="flex items-center gap-1.5 bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 rounded-lg px-2 py-1.5 text-left transition transform active:scale-95">
+            <span class="text-base">${ev.icon}</span>
+            <span class="text-[11px] font-bold text-amber-200/90 truncate">${ev.title}</span>
+          </button>
+        `).join('');
+
+        card.innerHTML = `
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-2.5">
+            <div class="flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-slate-800 border border-slate-600 flex items-center justify-center font-mono font-black text-amber-400 text-xs">
+                ${char.seat}
+              </span>
+              <span class="font-bold text-sm text-slate-200">${char.name}</span>
+            </div>
+            <div id="stamp-display-${char.seat}" class="h-6 flex items-center">
+              <span class="text-[11px] text-slate-500 font-bold">❔ 待定</span>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3 my-1">
+            <div class="relative w-20 h-20 sm:w-22 sm:h-22 flex-shrink-0 cursor-pointer" onclick="handleCardAvatarClick(${char.seat})">
+              <div id="avatar-box-${char.seat}" class="w-full h-full rounded-2xl p-1 bg-slate-800/80 border border-slate-700 shadow-inner overflow-hidden">
+                ${SVG_AVATARS[char.avatarKey] || SVG_AVATARS.guard}
+              </div>
+            </div>
+
+            <div class="flex-1 bg-slate-800/95 border border-slate-700 rounded-xl p-2.5 relative text-xs text-slate-200 leading-snug shadow">
+              <p class="italic text-slate-300">「${char.quote}」</p>
+            </div>
+          </div>
+
+          <div class="mt-2.5 pt-2 border-t border-slate-800/80">
+            <div class="text-[10px] text-slate-400 font-bold mb-1.5 flex items-center gap-1">
+              <span>🔍 隨身關鍵物證 (點擊檢視):</span>
+            </div>
+            <div class="grid grid-cols-2 gap-1.5">
+              ${evidenceButtonsHtml}
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 mt-3 pt-2 border-t border-slate-800">
+            <button onclick="stampCharacter(${char.seat}, 1)" class="py-2 bg-emerald-950/70 hover:bg-emerald-900/80 active:bg-emerald-800 border border-emerald-600/50 rounded-xl text-emerald-300 font-bold text-xs flex items-center justify-center gap-1 shadow transition">
+              <span>👤</span>
+              <span>定為好人</span>
+            </button>
+            <button onclick="stampCharacter(${char.seat}, 2)" class="py-2 bg-rose-950/70 hover:bg-rose-900/80 active:bg-rose-800 border border-rose-600/50 rounded-xl text-rose-300 font-bold text-xs flex items-center justify-center gap-1 shadow transition">
+              <span>🐺</span>
+              <span>指認狼人</span>
+            </button>
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+
+      updateStatsSummary();
+    }
+
+    function handleEvidenceClick(charIdx, evIdx) {
+      const char = GAME_CASES[currentCaseIndex].characters[charIdx];
+      const ev = char.evidences[evIdx];
+      showEvidence(ev.icon, ev.title, ev.desc);
+    }
+
+    /* =====================================================================
+       5. 蓋章與互動推導
+       ===================================================================== */
+    function stampCharacter(seat, typeVal) {
+      AudioEngine.stampSound();
+      const type = (typeVal === 1 || typeVal === 'good') ? 'good' : 'wolf';
+      userDeductions[seat] = type;
+      
+      const stampBox = document.getElementById(`stamp-display-${seat}`);
+      const card = document.getElementById(`char-card-${seat}`);
+
+      if (type === 'good') {
+        stampBox.innerHTML = `
+          <div class="stamp-badge bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-black text-xs px-2.5 py-0.5 rounded shadow-lg border border-emerald-300 flex items-center gap-1">
+            <span>👤 好人</span>
+          </div>
+        `;
+        card.classList.remove('border-rose-600', 'bg-rose-950/20');
+        card.classList.add('border-emerald-600/70', 'bg-emerald-950/15');
+      } else {
+        stampBox.innerHTML = `
+          <div class="stamp-badge bg-gradient-to-r from-rose-700 to-red-600 text-white font-black text-xs px-2.5 py-0.5 rounded shadow-lg border border-rose-300 flex items-center gap-1">
+            <span>🐺 狼人</span>
+          </div>
+        `;
+        card.classList.remove('border-emerald-600', 'bg-emerald-950/15');
+        card.classList.add('border-rose-600/70', 'bg-rose-950/20');
+      }
+
+      updateStatsSummary();
+    }
+
+    function updateStatsSummary() {
+      let goods = 0;
+      let wolves = 0;
+      Object.values(userDeductions).forEach(v => {
+        if (v === 'good') goods++;
+        if (v === 'wolf') wolves++;
+      });
+      document.getElementById('statusGoodCount').innerText = `好人: ${goods}`;
+      document.getElementById('statusWolfCount').innerText = `狼人: ${wolves}`;
+    }
+
+    function resetCurrentDeductions() {
+      AudioEngine.stampSound();
+      renderCurrentCase();
+    }
+
+    /* =====================================================================
+       6. 查驗鏡道具
+       ===================================================================== */
+    function activateInspectorTool() {
+      if (inspectorRemaining <= 0) {
+        alert('本案查驗鏡次數已用盡！請依據物證與口供獨立推理。');
+        return;
+      }
+      isInspectorActive = !isInspectorActive;
+      updateInspectorUI();
+      if (isInspectorActive) {
+        AudioEngine.clueSound();
+        alert('請點擊想要查驗的角色立繪，將立即揭曉其底牌真相！');
+      }
+    }
+
+    function updateInspectorUI() {
+      document.getElementById('inspectCountBadge').innerText = inspectorRemaining;
+      const btn = document.getElementById('inspectToolBtn');
+      if (isInspectorActive) {
+        btn.classList.add('ring-2', 'ring-white', 'scale-105');
+      } else {
+        btn.classList.remove('ring-2', 'ring-white', 'scale-105');
+      }
+    }
+
+    function handleCardAvatarClick(seat) {
+      if (!isInspectorActive || inspectorRemaining <= 0) return;
+      const caseData = GAME_CASES[currentCaseIndex];
+      const target = caseData.characters.find(c => c.seat === seat);
+      if (!target) return;
+
+      inspectorRemaining--;
+      isInspectorActive = false;
+      updateInspectorUI();
+      AudioEngine.clueSound();
+
+      if (target.isWolf) {
+        document.getElementById(`avatar-box-${seat}`).innerHTML = SVG_AVATARS.werewolf;
+        alert(`【查驗鏡發動！】${seat}號【${target.name}】身後浮現血色狼影，真實身份是：🐺 潛伏狼人！`);
+        stampCharacter(seat, 2);
+      } else {
+        alert(`【查驗鏡發動！】${seat}號【${target.name}】周身聖光純淨，真實身份是：👤 絕對好人！`);
+        stampCharacter(seat, 1);
+      }
+    }
+
+    /* =====================================================================
+       7. 物證視窗與結案判定
+       ===================================================================== */
+    function showEvidence(icon, title, desc) {
+      AudioEngine.clueSound();
+      document.getElementById('evidenceModalIcon').innerText = icon;
+      document.getElementById('evidenceModalTitle').innerText = title;
+      document.getElementById('evidenceModalDesc').innerText = desc;
+      document.getElementById('evidenceModal').classList.remove('hidden');
+    }
+
+    function closeEvidenceModal() {
+      document.getElementById('evidenceModal').classList.add('hidden');
+    }
+
+    function submitVerdict() {
+      const caseData = GAME_CASES[currentCaseIndex];
+      const chars = caseData.characters;
+
+      const unassigned = chars.some(c => !userDeductions[c.seat]);
+      if (unassigned) {
+        alert('還有角色尚未指認身份！請為每位嫌疑人蓋上【好人】或【狼人】印章。');
+        return;
+      }
+
+      let isAllCorrect = true;
+      chars.forEach(c => {
+        const correctType = c.isWolf ? 'wolf' : 'good';
+        if (userDeductions[c.seat] !== correctType) {
+          isAllCorrect = false;
+        }
+      });
+
+      const modal = document.getElementById('resultModal');
+      const modalBox = document.getElementById('resultModalBox');
+      const icon = document.getElementById('resultIcon');
+      const title = document.getElementById('resultTitle');
+      const subtitle = document.getElementById('resultSubtitle');
+      const proofText = document.getElementById('resultProofText');
+      const nextBtn = document.getElementById('resultNextBtn');
+
+      if (isAllCorrect) {
+        AudioEngine.victorySound();
+        saveProgress(caseData.id);
+        modalBox.className = "bg-slate-900 border-2 border-emerald-500 w-full max-w-md rounded-2xl p-6 text-center shadow-2xl relative";
+        icon.innerText = "🏆";
+        title.className = "text-2xl font-black mb-1 text-emerald-400";
+        title.innerText = "推理正確，案情告破！";
+        subtitle.innerText = "所有狼人均被成功揪出，好人陣營獲勝！";
+        proofText.innerText = caseData.proof;
+        nextBtn.classList.remove('hidden');
+      } else {
+        AudioEngine.defeatSound();
+        modalBox.className = "bg-slate-900 border-2 border-rose-600 w-full max-w-md rounded-2xl p-6 text-center shadow-2xl relative";
+        icon.innerText = "🩸";
+        title.className = "text-2xl font-black mb-1 text-rose-500";
+        title.innerText = "審判失誤，真兇逃脫！";
+        subtitle.innerText = "物證與發言之間存在未察覺的矛盾，請重新審視線索。";
+        proofText.innerText = "提示：點擊嫌疑人名下的【隨身關鍵物證】圖示，比對身上是否帶有【狼毛】、【腐泥】或神聖公證手諭。";
+        nextBtn.classList.add('hidden');
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    function closeResultModal() {
+      document.getElementById('resultModal').classList.add('hidden');
+    }
+
+    function nextCase() {
+      closeResultModal();
+      if (currentCaseIndex < GAME_CASES.length - 1) {
+        currentCaseIndex++;
+        renderCurrentCase();
+      } else {
+        alert('恭喜你！五十宗狼人迷案已全數偵破，成為傳奇大偵探！');
+      }
+    }
+
+    /* =====================================================================
+       8. 50 關卷宗選單與儲存
+       ===================================================================== */
+    function toggleLevelModal() {
+      const modal = document.getElementById('levelModal');
+      modal.classList.toggle('hidden');
+      if (!modal.classList.contains('hidden')) {
+        switchChapterTab(GAME_CASES[currentCaseIndex].chapter);
+      }
+    }
+
+    function switchChapterTab(chap) {
+      const tabs = document.querySelectorAll('#chapterTabs button');
+      tabs.forEach((tab, idx) => {
+        if (idx + 1 === chap) {
+          tab.className = "px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-bold whitespace-nowrap";
+        } else {
+          tab.className = "px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap";
+        }
+      });
+
+      const grid = document.getElementById('levelGrid');
+      grid.innerHTML = '';
+      const start = (chap - 1) * 10;
+      const end = start + 10;
+      const clearedList = getClearedCases();
+
+      for (let i = start; i < end; i++) {
+        const c = GAME_CASES[i];
+        const isCleared = clearedList.includes(c.id);
+        const isCurrent = i === currentCaseIndex;
+
+        const btn = document.createElement('button');
+        btn.onclick = () => {
+          currentCaseIndex = i;
+          renderCurrentCase();
+          toggleLevelModal();
+        };
+        btn.className = `p-2.5 rounded-xl border text-left transition flex flex-col justify-between ${
+          isCurrent 
+            ? 'bg-amber-950/60 border-amber-500 text-amber-200' 
+            : isCleared 
+              ? 'bg-emerald-950/40 border-emerald-600/60 text-slate-200' 
+              : 'bg-slate-800/60 border-slate-700 text-slate-400 hover:bg-slate-800'
+        }`;
+
+        btn.innerHTML = `
+          <div class="flex items-center justify-between text-xs font-mono font-bold mb-1">
+            <span>#${c.id}</span>
+            <span>${isCleared ? '⭐' : '🔒'}</span>
+          </div>
+          <div class="text-[11px] font-bold text-slate-200 truncate">${c.title.split('：')[1]}</div>
+        `;
+        grid.appendChild(btn);
+      }
+    }
+
+    function getClearedCases() {
+      try {
+        return JSON.parse(localStorage.getItem('werewolf_cleared_cases') || '[]');
+      } catch(e) { return []; }
+    }
+
+    function saveProgress(caseId) {
+      const list = getClearedCases();
+      if (!list.includes(caseId)) {
+        list.push(caseId);
+        localStorage.setItem('werewolf_cleared_cases', JSON.stringify(list));
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      renderCurrentCase();
+    });
+  </script>
+</body>
+</html>
