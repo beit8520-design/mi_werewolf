@@ -20,18 +20,21 @@
       font-family: 'ZCOOL KuaiLe', cursive, sans-serif;
     }
 
+    /* 仿日系暗黑懸疑風黑板框 */
     .board-container {
       background: #181824;
       border: 5px solid #2e2e42;
       box-shadow: 0 16px 36px rgba(0,0,0,0.9), inset 0 0 18px rgba(0,0,0,0.7);
     }
 
+    /* 教室黑板 */
     .parchment-inner {
       background: #0c2b26;
       box-shadow: inset 0 0 20px rgba(0,0,0,0.85);
       border: 2px solid #0f463d;
     }
 
+    /* 課桌卡牌 */
     .char-card {
       transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.12s ease;
       background: #e2e8f0;
@@ -41,22 +44,25 @@
       transform: scale(0.93);
     }
 
+    /* 正確好人同學 */
     .revealed-good {
       background: #86efac !important;
       border-color: #15803d !important;
       box-shadow: 0 0 16px rgba(34, 197, 94, 0.9);
     }
 
+    /* 偽裝狼人真身 */
     .revealed-wolf {
       background: #fca5a5 !important;
       border-color: #b91c1c !important;
       box-shadow: 0 0 16px rgba(239, 68, 68, 0.9);
     }
 
+    /* 放大對話氣泡：清晰明瞭 */
     .bubble-tag {
       background: #0f172a;
-      border: 1.5px solid #38bdf8;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.75);
+      border: 2px solid #38bdf8;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.85);
       animation: popIn 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
     @keyframes popIn {
@@ -123,12 +129,12 @@
       </div>
     </div>
 
-    <!-- 即時學生發言便利貼提示窗 -->
-    <div id="selectedHintBox" class="w-full bg-slate-950 border-2 border-sky-400/80 rounded-xl p-2 mt-2 text-xs flex items-center gap-2 shadow-lg">
-      <span class="text-xl flex-shrink-0">💬</span>
+    <!-- 大字號即時學生發言便利貼提示窗 -->
+    <div id="selectedHintBox" class="w-full bg-slate-950 border-2 border-sky-400 rounded-2xl p-3 mt-2 text-xs flex items-center gap-2.5 shadow-xl">
+      <span class="text-2xl flex-shrink-0">💬</span>
       <div class="flex-1 overflow-hidden">
-        <div id="hintSpeaker" class="font-bold text-sky-300 text-[11px]">同學八卦筆記板</div>
-        <div id="hintQuote" class="text-slate-200 text-xs truncate">點選帶有 💬 氣泡的同學查看具體證詞，小心狼群陷阱！</div>
+        <div id="hintSpeaker" class="font-black text-sky-300 text-xs tracking-wide">同學八卦筆記板</div>
+        <div id="hintQuote" class="text-white text-sm font-bold leading-snug mt-0.5">點選帶有 💬 氣泡的同學查看具體證詞，小心狼群陷阱！</div>
       </div>
     </div>
   </main>
@@ -139,7 +145,7 @@
       <div class="w-24 h-24 mx-auto rounded-2xl bg-slate-800 border-2 border-sky-400/50 p-1 mb-2 overflow-hidden shadow-inner flex items-center justify-center" id="actionModalAvatar">
       </div>
       <h3 class="text-lg font-black text-sky-300 comic-font mb-0.5" id="actionModalName">選擇身份</h3>
-      <p class="text-[11px] text-sky-200/90 mb-3 bg-slate-950 p-2.5 rounded-xl border border-slate-800 leading-snug" id="actionModalCluePreview"></p>
+      <p class="text-xs text-sky-200/90 mb-3 bg-slate-950 p-3 rounded-xl border border-slate-800 leading-normal font-bold" id="actionModalCluePreview"></p>
 
       <div class="grid grid-cols-2 gap-3 mb-2">
         <button onclick="chooseIdentity('good')" class="py-3 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-black rounded-2xl border-2 border-emerald-300 shadow-lg flex flex-col items-center gap-0.5">
@@ -185,30 +191,41 @@
 
   <script>
     /* =====================================================================
-       1. 13 位學生真實圖片路徑精確對應（修正 .jpg 與 .PNG 大小寫，加入墨鏡特徵）
+       1. 13 位學生真實圖片路徑精確對齊（統一為大寫 .PNG，並支援自動載入防呆）
        ===================================================================== */
     const ROLES_LIST = [
-      { name: '柳氓(不良)', img: 'student-01.jpg', isFemale: false, hasGlasses: false },
-      { name: '娜拉(墨鏡)', img: 'student-02.jpg', isFemale: true,  hasGlasses: true },
-      { name: '富帥(潮男)', img: 'student-03.jpg', isFemale: false, hasGlasses: true },
-      { name: '歐娜娜(病嬌)', img: 'student-04.jpg', isFemale: true, hasGlasses: false },
-      { name: '蔣不通(苦惱)', img: 'student-05.jpg', isFemale: false, hasGlasses: false },
-      { name: '若若希(捲髮)', img: 'student-06.jpg', isFemale: true,  hasGlasses: false },
-      { name: '阿豪(西裝)', img: 'student-07.PNG', isFemale: false, hasGlasses: false },
-      { name: '阿Gen(刺蝟)', img: 'student-08.PNG', isFemale: false, hasGlasses: true },
-      { name: '雙丸子(墨鏡)', img: 'student-09.jpg', isFemale: true,  hasGlasses: true },
-      { name: '沐照(班長)', img: 'student-10.jpg', isFemale: true,  hasGlasses: true },
-      { name: '阿澤(理科)', img: 'student-11.jpg', isFemale: false, hasGlasses: true },
-      { name: '紫亮(刺頭)', img: 'student-12.jpg', isFemale: false, hasGlasses: false },
-      { name: '夏天(風紀)', img: 'student-13.PNG', isFemale: true,  hasGlasses: false }
+      { name: '柳氓(不良)', fileBase: 'student-01', isFemale: false, hasGlasses: false },
+      { name: '娜拉(墨鏡)', fileBase: 'student-02', isFemale: true,  hasGlasses: true },
+      { name: '富帥(潮男)', fileBase: 'student-03', isFemale: false, hasGlasses: true },
+      { name: '歐娜娜(病嬌)', fileBase: 'student-04', isFemale: true, hasGlasses: false },
+      { name: '蔣不通(苦惱)', fileBase: 'student-05', isFemale: false, hasGlasses: false },
+      { name: '若若希(捲髮)', fileBase: 'student-06', isFemale: true,  hasGlasses: false },
+      { name: '阿豪(西裝)', fileBase: 'student-07', isFemale: false, hasGlasses: false },
+      { name: '阿Gen(刺蝟)', fileBase: 'student-08', isFemale: false, hasGlasses: true },
+      { name: '雙丸子(墨鏡)', fileBase: 'student-09', isFemale: true,  hasGlasses: true },
+      { name: '沐照(班長)', fileBase: 'student-10', isFemale: true,  hasGlasses: true },
+      { name: '阿澤(理科)', fileBase: 'student-11', isFemale: false, hasGlasses: true },
+      { name: '紫亮(刺頭)', fileBase: 'student-12', isFemale: false, hasGlasses: false },
+      { name: '夏天(風紀)', fileBase: 'student-13', isFemale: true,  hasGlasses: false }
     ];
+
+    // 自動圖片備援載入器（防止 .PNG / .jpg 大小寫不一致導致破圖）
+    function handleImgError(imgEl, fileBase) {
+      const extensions = ['.PNG', '.jpg', '.png', '.jpeg'];
+      let currentSrc = imgEl.getAttribute('data-attempt') || '0';
+      let attempt = parseInt(currentSrc);
+      if (attempt < extensions.length) {
+        imgEl.setAttribute('data-attempt', (attempt + 1).toString());
+        imgEl.src = fileBase + extensions[attempt];
+      }
+    }
 
     const COLS = ['A', 'B', 'C', 'D'];
     const ROWS = [1, 2, 3, 4, 5];
     const GAME_LEVELS = [];
 
     /* =====================================================================
-       2. 100+ 種多維度題型生成庫（包含墨鏡特徵、十字鄰格、射線視角、互斥邏輯）
+       2. 100+ 種多維度題型生成庫
        ===================================================================== */
     (function generateVibrantCampusLevels() {
       for (let lvl = 1; lvl <= 50; lvl++) {
@@ -274,7 +291,7 @@
             isFemale: studentProfile.isFemale,
             hasGlasses: studentProfile.hasGlasses,
             isWolf: isWolf,
-            img: studentProfile.img,
+            fileBase: studentProfile.fileBase,
             disabled: false,
             clue: ""
           };
@@ -298,7 +315,7 @@
           ];
           const crossWolves = wolfCoords.filter(w => crossNeighbors.includes(w)).length;
 
-          // 對角斜角 4 格
+          // 斜角 4 格
           const diagNeighbors = [
             `${COLS[cIdx - 1]}${r - 1}`, `${COLS[cIdx + 1]}${r - 1}`,
             `${COLS[cIdx - 1]}${r + 1}`, `${COLS[cIdx + 1]}${r + 1}`
@@ -311,7 +328,6 @@
 
           // 墨鏡眼鏡特徵
           const glassesWolves = wolfCoords.filter(w => gridCells[w] && gridCells[w].hasGlasses).length;
-          const noGlassesWolves = wolfCoords.filter(w => gridCells[w] && !gridCells[w].hasGlasses).length;
 
           // 射線方向視角
           const leftCoords = COLS.slice(0, cIdx).map(nc => `${nc}${r}`);
@@ -332,7 +348,6 @@
           const windowWolves = wolfCoords.filter(w => w[0] === 'A' || w[0] === 'B').length;
           const doorWolves = wolfCoords.filter(w => w[0] === 'C' || w[0] === 'D').length;
 
-          // 夥伴與狼人
           const otherGood = goodCoords.find(gc => gc !== coord && gc[0] !== c && gc[1] !== r);
           const aWolf = wolfCoords[0];
 
@@ -547,16 +562,17 @@
                 <span class="bg-white/85 px-1 rounded shadow-xs">${cellData.isFemale ? '♀️' : '♂️'}</span>
               </div>
 
-              <!-- 讀取真實圖片 -->
+              <!-- 讀取真實圖片並自帶備援防呆 -->
               <div class="w-full flex-1 my-0.5 rounded-lg overflow-hidden flex items-center justify-center p-0.5" id="avatar-${coord}">
-                <img src="${cellData.img}" class="w-full h-full object-cover rounded-md" alt="${cellData.name}" />
+                <img src="${cellData.fileBase}.PNG" onerror="handleImgError(this, '${cellData.fileBase}')" class="w-full h-full object-cover rounded-md" alt="${cellData.name}" />
               </div>
 
               <div class="w-full text-center text-[10px] sm:text-[11px] font-black bg-slate-900/20 text-slate-900 rounded py-0.2 truncate z-10" id="name-${coord}">
                 ${cellData.name}
               </div>
 
-              <div id="bubble-${coord}" class="bubble-tag absolute -bottom-1 -left-1 -right-1 text-[8px] text-sky-200 px-1 py-0.5 rounded-lg leading-tight truncate z-20 ${hasBubble ? '' : 'hidden'}">
+              <!-- 放大字號的對話氣泡 -->
+              <div id="bubble-${coord}" class="bubble-tag absolute -bottom-1 -left-1 -right-1 text-[10px] font-bold text-sky-200 px-1 py-1 rounded-lg leading-tight truncate z-20 ${hasBubble ? '' : 'hidden'}">
                 💬 ${cellData.clue || ''}
               </div>
             `;
@@ -580,6 +596,7 @@
       const cellData = GAME_LEVELS[currentLevelIndex].gridCells[coord];
       if (!cellData || cellData.disabled) return;
       
+      // 點擊卡片時，在底部以 14px 粗體完整展開顯示線索
       if (displayedClues[coord] && cellData.clue) {
         document.getElementById('hintSpeaker').innerText = `【${coord}號】${cellData.name} 的發言：`;
         document.getElementById('hintQuote').innerText = cellData.clue;
@@ -588,7 +605,7 @@
       if (!revealedStatus[coord]) {
         activeSelectingCoord = coord;
         document.getElementById('actionModalAvatar').innerHTML = `
-          <img src="${cellData.img}" class="w-full h-full object-cover rounded-xl" alt="${cellData.name}" />
+          <img src="${cellData.fileBase}.PNG" onerror="handleImgError(this, '${cellData.fileBase}')" class="w-full h-full object-cover rounded-xl" alt="${cellData.name}" />
         `;
         document.getElementById('actionModalName').innerText = `${coord} 課桌 · ${cellData.name}`;
         
@@ -623,10 +640,10 @@
           const cardEl = document.getElementById(`card-${coord}`);
           cardEl.className = "char-card revealed-wolf rounded-xl p-1 flex flex-col justify-between items-center relative shadow-md overflow-hidden";
           
-          // 狼人變身：紅色暗影濾鏡 + 狼爪變身標誌
+          // 狼人變身
           document.getElementById(`avatar-${coord}`).innerHTML = `
             <div class="relative w-full h-full">
-              <img src="${cellData.img}" class="w-full h-full object-cover rounded-md grayscale contrast-150 brightness-50" />
+              <img src="${cellData.fileBase}.PNG" onerror="handleImgError(this, '${cellData.fileBase}')" class="w-full h-full object-cover rounded-md grayscale contrast-150 brightness-50" />
               <span class="absolute inset-0 flex items-center justify-center text-3xl animate-pulse">🐺</span>
             </div>
           `;
