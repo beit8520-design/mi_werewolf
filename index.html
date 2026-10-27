@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>狼人在身邊 - 查驗推理</title>
+  <title>狼人在身邊 - 邏輯推理大師</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Noto+Sans+TC:wght@500;700;900&display=swap');
@@ -52,9 +52,8 @@
       box-shadow: 0 0 12px rgba(239, 68, 68, 0.75);
     }
 
-    /* 仿截圖黑底對話氣泡 */
     .bubble-tag {
-      background: rgba(15, 23, 42, 0.94);
+      background: rgba(15, 23, 42, 0.95);
       border: 1.5px solid #fbbf24;
       box-shadow: 0 4px 10px rgba(0,0,0,0.5);
       animation: popIn 0.2s ease-out;
@@ -83,7 +82,6 @@
       <span id="caseNavText">第 1/50 案</span>
     </button>
     <div class="flex items-center gap-2">
-      <!-- 錯誤機會心心 (3 次機會) -->
       <div class="flex items-center gap-1 bg-purple-950/80 px-2.5 py-1 rounded-xl border border-purple-400/40 text-xs shadow">
         <span class="text-sm">❤️</span>
         <span id="livesDisplay" class="font-black text-rose-400 tracking-wider">❤️❤️❤️</span>
@@ -125,8 +123,8 @@
     <div id="selectedHintBox" class="w-full bg-slate-950/90 border-2 border-amber-500/60 rounded-xl p-2.5 mt-2 text-xs flex items-center gap-2">
       <span class="text-xl flex-shrink-0">💬</span>
       <div class="flex-1 overflow-hidden">
-        <div id="hintSpeaker" class="font-bold text-amber-400 text-[11px]">開局已隨機公佈線索！</div>
-        <div id="hintQuote" class="text-slate-200 text-xs">請點擊卡片查看具體發言，或直接指認【好人】與【狼人】！</div>
+        <div id="hintSpeaker" class="font-bold text-amber-400 text-[11px]">邏輯案件線索簿</div>
+        <div id="hintQuote" class="text-slate-200 text-xs">點選盤面帶有 💬 氣泡的角色，交叉比對性別、距離與視角線索！</div>
       </div>
     </div>
   </main>
@@ -137,7 +135,7 @@
       <div class="w-16 h-16 mx-auto rounded-full bg-purple-900/60 border-2 border-purple-400/50 p-1 mb-2 overflow-hidden" id="actionModalAvatar">
       </div>
       <h3 class="text-lg font-black text-amber-300 comic-font mb-0.5" id="actionModalName">選擇身份</h3>
-      <p class="text-[11px] text-amber-200/80 mb-3" id="actionModalCluePreview"></p>
+      <p class="text-[11px] text-amber-200/90 mb-3 bg-purple-900/60 p-2 rounded-xl border border-purple-400/30" id="actionModalCluePreview"></p>
 
       <div class="grid grid-cols-2 gap-3 mb-2">
         <button onclick="chooseIdentity('good')" class="py-3 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-black rounded-2xl border-2 border-emerald-300 shadow flex flex-col items-center gap-0.5">
@@ -196,23 +194,32 @@
     };
 
     /* =====================================================================
-       2. 50 關數據構建
+       2. 高階多維度邏輯生成引擎 (50 關情境豐富化)
        ===================================================================== */
     const COLS = ['A', 'B', 'C', 'D'];
     const ROWS = [1, 2, 3, 4, 5];
     const GAME_LEVELS = [];
 
-    (function generateLevels() {
+    (function generateIntelligentLevels() {
       const namesF = ['沐照', '咖喱', '夏天', '小燕子', '沐熙', '琪多多', '小倩', '紫苑'];
       const namesM = ['小馬', '旺健民', '小賴', '沈金冰', '小豬', '大館長', '李逍', '阿強'];
 
       for (let lvl = 1; lvl <= 50; lvl++) {
         let wolfNum = 2;
-        if (lvl <= 10) wolfNum = 2;
-        else if (lvl <= 25) wolfNum = 3;
+        if (lvl <= 12) wolfNum = 2;
+        else if (lvl <= 30) wolfNum = 3;
         else wolfNum = 4;
 
-        const disabledCoords = (lvl % 2 === 1) ? ['A1', 'A4'] : ['D1', 'C5'];
+        // 動態更換障礙物
+        const disabledPattern = [
+          ['A1', 'A4'],
+          ['D1', 'C5'],
+          ['B1', 'C4'],
+          ['A3', 'D3'],
+          ['B5', 'C1']
+        ];
+        const disabledCoords = disabledPattern[(lvl - 1) % disabledPattern.length];
+
         const validCoords = [];
         COLS.forEach(c => {
           ROWS.forEach(r => {
@@ -221,9 +228,9 @@
           });
         });
 
-        // 決定狼人坐標
+        // 隨機選定狼人坐標
         const wolfCoords = [];
-        const shuffled = [...validCoords].sort(() => 0.5 - Math.sin(lvl * 7.9 + Math.random()));
+        const shuffled = [...validCoords].sort(() => 0.5 - Math.sin(lvl * 13.7 + Math.random()));
         for (let w = 0; w < wolfNum; w++) {
           wolfCoords.push(shuffled[w]);
         }
@@ -231,423 +238,92 @@
         const gridCells = {};
         const goodCoords = [];
 
+        // 預先建置人物基礎屬性
         validCoords.forEach((coord, idx) => {
           const isWolf = wolfCoords.includes(coord);
           if (!isWolf) goodCoords.push(coord);
 
-          const col = coord[0];
-          const row = parseInt(coord[1]);
           const isFemale = (idx % 2 === 0);
           const name = isFemale ? namesF[idx % namesF.length] : namesM[idx % namesM.length];
           const avatarKey = isFemale ? ['girl1', 'girl2', 'girl3'][idx % 3] : ['boy1', 'boy2', 'boy3'][idx % 3];
 
-          // 好人發言線索庫
-          const rowWolves = wolfCoords.filter(w => w[1] == row).length;
-          const colWolves = wolfCoords.filter(w => w[0] == col).length;
-          const adjWolves = getAdjacentCount(coord, wolfCoords);
-
-          let clue = "";
-          const clueType = idx % 4;
-          if (clueType === 0) {
-            clue = `我看到 ${col} 列中有 ${colWolves} 個人露出了狼尾巴！`;
-          } else if (clueType === 1) {
-            clue = `第 ${row} 排總共有 ${rowWolves} 個壞人！`;
-          } else if (clueType === 2) {
-            clue = `我的相鄰上下左右裡，藏著 ${adjWolves} 隻狼人！`;
-          } else {
-            const randomGood = validCoords.find(c => !wolfCoords.includes(c) && c !== coord);
-            clue = `${randomGood} 是我的好朋友！他絕對是好人。`;
-          }
-
           gridCells[coord] = {
             coord: coord,
+            col: coord[0],
+            row: parseInt(coord[1]),
             name: name,
             isFemale: isFemale,
             isWolf: isWolf,
             avatarKey: avatarKey,
             disabled: false,
-            clue: clue
+            clue: ""
           };
         });
 
+        // 為每位好人賦予深度多樣的「情境邏輯線索」
+        goodCoords.forEach((coord, gIdx) => {
+          const cell = gridCells[coord];
+          const c = cell.col;
+          const r = cell.row;
+          const cIdx = COLS.indexOf(c);
+
+          // 計算客觀數據
+          const rowWolves = wolfCoords.filter(w => w[1] == r).length;
+          const colWolves = wolfCoords.filter(w => w[0] == c).length;
+          
+          // 計算女性狼人與男性狼人
+          const femaleWolvesInCol = wolfCoords.filter(w => gridCells[w] && gridCells[w].col === c && gridCells[w].isFemale).length;
+          const maleWolvesInRow = wolfCoords.filter(w => gridCells[w] && gridCells[w].row === r && !gridCells[w].isFemale).length;
+
+          // 計算步長曼哈頓距離為 1 的狼人 (十字相鄰)
+          const neighbors = [
+            `${COLS[cIdx - 1]}${r}`, `${COLS[cIdx + 1]}${r}`,
+            `${c}${r - 1}`, `${c}${r + 1}`
+          ];
+          const adjWolves = wolfCoords.filter(w => neighbors.includes(w)).length;
+
+          // 多種好玩且邏輯互斥的題目類型
+          const clueTypes = [
+            // 題型 1：邊界與安全區推導
+            () => {
+              if (adjWolves === 0) return `安全警報：我的上下左右十字格內【完全沒有狼人】，全是好人！`;
+              return `我聽見周圍呼吸聲，我的相鄰上下左右裡正好潛伏著 ${adjWolves} 隻狼！`;
+            },
+            // 題型 2：性別特徵過濾
+            () => {
+              if (femaleWolvesInCol === 0) return `我確認過，【${c} 列】的所有女性角色全部都是無辜好人！`;
+              return `目擊線索：【第 ${r} 排】的男性當中，正好藏著 ${maleWolvesInRow} 個壞人！`;
+            },
+            // 題型 3：視角射線與定向直擊
+            () => {
+              // 往右邊掃描
+              const rightNeighbors = COLS.slice(cIdx + 1).map(nc => `${nc}${r}`);
+              const rightWolves = wolfCoords.filter(w => rightNeighbors.includes(w)).length;
+              if (rightNeighbors.length > 0) {
+                return `我往我的右側望去，同一水平排右方共有 ${rightWolves} 隻狼人。`;
+              }
+              return `【${c} 列】目前整條縱線上，恰好露出 ${colWolves} 隻狼尾巴！`;
+            },
+            // 題型 4：互斥/共存推導 (如果 A 那麼 B，或二選一)
+            () => {
+              const otherGood = goodCoords.find(gc => gc !== coord && gc[0] !== c && gc[1] !== r);
+              const oneWolf = wolfCoords[0];
+              if (gIdx % 2 === 0 && otherGood) {
+                return `調查證明：我和【${otherGood}】昨晚都在會議室，我們兩個都是好人！`;
+              } else if (oneWolf) {
+                // 指向性二選一
+                const candidate = otherGood || validCoords[0];
+                return `邏輯互斥：在【${candidate}】與【${oneWolf}】兩人之中，必定恰好只有 1 隻狼人！`;
+              }
+              return `在第【${r} 排】這條橫線上，總共有 ${rowWolves} 隻狼人作惡！`;
+            }
+          ];
+
+          // 隨機選一種高階題型
+          const selectedGenerator = clueTypes[gIdx % clueTypes.length];
+          cell.clue = selectedGenerator();
+        });
+
+        // 禁制格加入
         disabledCoords.forEach(dc => {
-          gridCells[dc] = { coord: dc, disabled: true };
-        });
-
-        // 開局隨機挑選 2 位好人作為「初始開局線索」
-        const initialClueCoords = [];
-        const shuffledGoods = [...goodCoords].sort(() => 0.5 - Math.random());
-        initialClueCoords.push(shuffledGoods[0], shuffledGoods[1]);
-
-        GAME_LEVELS.push({
-          levelId: lvl,
-          wolfCount: wolfNum,
-          totalValid: validCoords.length,
-          gridCells: gridCells,
-          initialClueCoords: initialClueCoords
-        });
-      }
-    })();
-
-    function getAdjacentCount(coord, wolfCoords) {
-      const col = coord[0];
-      const row = parseInt(coord[1]);
-      const cIdx = COLS.indexOf(col);
-      const neighbors = [
-        `${COLS[cIdx - 1]}${row}`,
-        `${COLS[cIdx + 1]}${row}`,
-        `${col}${row - 1}`,
-        `${col}${row + 1}`
-      ];
-      return wolfCoords.filter(w => neighbors.includes(w)).length;
-    }
-
-    /* =====================================================================
-       3. 核心流程與開局線索展示
-       ===================================================================== */
-    let currentLevelIndex = 0;
-    let revealedStatus = {}; // { 'A1': 'good' | 'wolf' }
-    let displayedClues = {}; // { 'A1': true } 已經在盤面上顯示線索氣泡的坐標
-    let mistakes = 0;
-    let activeSelectingCoord = null;
-    let soundEnabled = true;
-
-    const SoundFx = {
-      ctx: null,
-      beep(freq, duration = 0.1, type = 'sine') {
-        if (!soundEnabled) return;
-        try {
-          if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-          const osc = this.ctx.createOscillator();
-          const gain = this.ctx.createGain();
-          osc.type = type;
-          osc.frequency.value = freq;
-          gain.gain.value = 0.15;
-          osc.connect(gain);
-          gain.connect(this.ctx.destination);
-          osc.start();
-          osc.stop(this.ctx.currentTime + duration);
-        } catch(e) {}
-      },
-      click() { this.beep(440, 0.05, 'square'); },
-      goodReveal() { this.beep(587, 0.12, 'triangle'); },
-      wolfCaught() { this.beep(220, 0.25, 'sawtooth'); },
-      wrong() { this.beep(160, 0.35, 'sawtooth'); },
-      win() { [523, 659, 783, 1046].forEach((f, i) => setTimeout(() => this.beep(f, 0.18, 'triangle'), i * 80)); },
-      lose() { [320, 260, 200, 140].forEach((f, i) => setTimeout(() => this.beep(f, 0.25, 'sawtooth'), i * 90)); }
-    };
-
-    function toggleAudio() {
-      soundEnabled = !soundEnabled;
-      document.getElementById('audioBtn').innerText = soundEnabled ? '🔊' : '🔇';
-    }
-
-    function initLevel() {
-      const lvl = GAME_LEVELS[currentLevelIndex];
-      revealedStatus = {};
-      displayedClues = {};
-      mistakes = 0;
-      updateLivesUI();
-
-      // 開局將初始線索標註好
-      lvl.initialClueCoords.forEach(c => {
-        displayedClues[c] = true;
-      });
-
-      document.getElementById('caseNavText').innerText = `第 ${lvl.levelId}/50 案`;
-      document.getElementById('boardCaseIndicator').innerText = `${lvl.levelId}/50`;
-      document.getElementById('wolvesRemaining').innerText = lvl.wolfCount;
-      document.getElementById('clearedCount').innerText = '0';
-      document.getElementById('totalCount').innerText = `/ ${lvl.totalValid}`;
-      document.getElementById('hintSpeaker').innerText = "開局初始情報：";
-      document.getElementById('hintQuote').innerText = `帶有 💬 氣泡的角色已提供線索，請點選卡片查看發言並開始指認！`;
-
-      const gridBoard = document.getElementById('gridBoard');
-      gridBoard.innerHTML = '';
-
-      ROWS.forEach(r => {
-        COLS.forEach(c => {
-          const coord = `${c}${r}`;
-          const cellData = lvl.gridCells[coord];
-          const cellEl = document.createElement('div');
-
-          if (cellData.disabled) {
-            cellEl.className = "w-full h-full rounded-xl bg-purple-900/40 border-2 border-purple-800/40 flex items-center justify-center opacity-40";
-            cellEl.innerHTML = `<span class="text-2xl text-purple-300">🚫</span>`;
-          } else {
-            cellEl.id = `card-${coord}`;
-            cellEl.className = "char-card rounded-xl p-1 flex flex-col justify-between items-center relative cursor-pointer shadow-md";
-            cellEl.onclick = () => onCardClicked(coord);
-
-            cellEl.innerHTML = `
-              <!-- 坐標與性別 -->
-              <div class="w-full flex justify-between items-center px-0.5 text-[9px] font-black text-purple-950">
-                <span class="font-mono">${coord}</span>
-                <span>${cellData.isFemale ? '♀️' : '♂️'}</span>
-              </div>
-
-              <!-- 角色大立繪 -->
-              <div class="w-9 h-9 sm:w-11 sm:h-11 my-0.5 rounded-full overflow-hidden bg-purple-950/20 p-0.5" id="avatar-${coord}">
-                ${AVATARS[cellData.avatarKey]}
-              </div>
-
-              <!-- 名字 -->
-              <div class="w-full text-center text-[10px] sm:text-[11px] font-black bg-purple-950/30 text-purple-950 rounded py-0.2 truncate" id="name-${coord}">
-                ${cellData.name}
-              </div>
-
-              <!-- 氣泡對話框 (有線索時懸浮在卡面上) -->
-              <div id="bubble-${coord}" class="bubble-tag absolute -bottom-1 -left-1 -right-1 text-[8px] text-amber-200 px-1 py-0.5 rounded-lg leading-tight truncate z-10 ${displayedClues[coord] ? '' : 'hidden'}">
-                💬 ${cellData.clue}
-              </div>
-            `;
-          }
-
-          gridBoard.appendChild(cellEl);
-        });
-      });
-    }
-
-    function updateLivesUI() {
-      const remainingLives = 3 - mistakes;
-      let hearts = '';
-      for (let i = 0; i < 3; i++) {
-        hearts += (i < remainingLives) ? '❤️' : '🖤';
-      }
-      document.getElementById('livesDisplay').innerText = hearts;
-    }
-
-    /* =====================================================================
-       4. 查驗與解鎖新線索
-       ===================================================================== */
-    function onCardClicked(coord) {
-      const cellData = GAME_LEVELS[currentLevelIndex].gridCells[coord];
-      
-      // 點擊任何卡片，下方記錄板同步展示其發言（若已知）
-      if (displayedClues[coord]) {
-        document.getElementById('hintSpeaker').innerText = `【${coord}號】${cellData.name} 的發言：`;
-        document.getElementById('hintQuote').innerText = cellData.clue;
-      }
-
-      // 若該卡片尚未查驗，打開指認彈窗
-      if (!revealedStatus[coord]) {
-        activeSelectingCoord = coord;
-        document.getElementById('actionModalAvatar').innerHTML = AVATARS[cellData.avatarKey];
-        document.getElementById('actionModalName').innerText = `${coord} 座位 · ${cellData.name}`;
-        
-        // 若該好人已有發言，在彈窗中也給提示
-        const preview = displayedClues[coord] ? `此人曾發言：「${cellData.clue}」` : '尚未公布發言，請根據其他人的線索推導其身分！';
-        document.getElementById('actionModalCluePreview').innerText = preview;
-
-        document.getElementById('actionModal').classList.remove('hidden');
-        SoundFx.click();
-      }
-    }
-
-    function closeActionModal() {
-      document.getElementById('actionModal').classList.add('hidden');
-      activeSelectingCoord = null;
-    }
-
-    function chooseIdentity(chosenType) {
-      if (!activeSelectingCoord) return;
-      const coord = activeSelectingCoord;
-      const cellData = GAME_LEVELS[currentLevelIndex].gridCells[coord];
-      closeActionModal();
-
-      const isActuallyWolf = cellData.isWolf;
-      const isGuessCorrect = (chosenType === 'wolf' && isActuallyWolf) || (chosenType === 'good' && !isActuallyWolf);
-
-      if (isGuessCorrect) {
-        // 查驗正確！
-        if (isActuallyWolf) {
-          // 抓到狼人
-          revealedStatus[coord] = 'wolf';
-          SoundFx.wolfCaught();
-          const cardEl = document.getElementById(`card-${coord}`);
-          cardEl.className = "char-card revealed-wolf rounded-xl p-1 flex flex-col justify-between items-center relative shadow-md";
-          document.getElementById(`avatar-${coord}`).innerHTML = AVATARS.wolf;
-          document.getElementById(`name-${coord}`).innerText = "🐺 狼人";
-          document.getElementById(`name-${coord}`).className = "w-full text-center text-[10px] sm:text-[11px] font-black bg-red-900 text-white rounded py-0.2";
-          
-          // 隱藏氣泡
-          const bubble = document.getElementById(`bubble-${coord}`);
-          if (bubble) bubble.classList.add('hidden');
-
-          document.getElementById('hintSpeaker').innerText = `【${coord}號】真身暴露！`;
-          document.getElementById('hintQuote').innerText = `狼人已被成功抓捕入獄！`;
-        } else {
-          // 查出好人 ➔ 立即公佈／更新線索！
-          revealedStatus[coord] = 'good';
-          displayedClues[coord] = true;
-          SoundFx.goodReveal();
-
-          const cardEl = document.getElementById(`card-${coord}`);
-          cardEl.className = "char-card revealed-good rounded-xl p-1 flex flex-col justify-between items-center relative shadow-md";
-          
-          // 在卡片上冒出氣泡
-          const bubble = document.getElementById(`bubble-${coord}`);
-          if (bubble) {
-            bubble.innerText = `💬 ${cellData.clue}`;
-            bubble.classList.remove('hidden');
-          }
-
-          document.getElementById('hintSpeaker').innerText = `【${coord}號】${cellData.name}（好人）提供新線索：`;
-          document.getElementById('hintQuote').innerText = cellData.clue;
-        }
-
-        checkVictoryCondition();
-      } else {
-        // 判斷錯誤 ➔ 扣心心
-        mistakes++;
-        SoundFx.wrong();
-        updateLivesUI();
-
-        const board = document.getElementById('mainBoard');
-        board.classList.add('shake-anim');
-        setTimeout(() => board.classList.remove('shake-anim'), 400);
-
-        const errorMsg = (chosenType === 'wolf') 
-          ? `判斷錯誤！${coord}號是無辜的好人！` 
-          : `判斷錯誤！${coord}號其實是潛伏的狼人！`;
-
-        document.getElementById('hintSpeaker').innerText = `⚠️ 指認失誤 (${mistakes}/3)`;
-        document.getElementById('hintQuote').innerText = errorMsg;
-
-        if (mistakes >= 3) {
-          triggerDefeat();
-        }
-      }
-    }
-
-    function checkVictoryCondition() {
-      const lvl = GAME_LEVELS[currentLevelIndex];
-      const validTotal = lvl.totalValid;
-      const clearedNow = Object.keys(revealedStatus).length;
-      document.getElementById('clearedCount').innerText = clearedNow;
-
-      let remainingWolves = lvl.wolfCount;
-      Object.keys(revealedStatus).forEach(c => {
-        if (revealedStatus[c] === 'wolf') remainingWolves--;
-      });
-      document.getElementById('wolvesRemaining').innerText = Math.max(0, remainingWolves);
-
-      if (clearedNow >= validTotal) {
-        triggerVictory();
-      }
-    }
-
-    function triggerVictory() {
-      SoundFx.win();
-      saveClearedLevel(GAME_LEVELS[currentLevelIndex].levelId);
-      
-      const modal = document.getElementById('resultModal');
-      const box = document.getElementById('resultBox');
-      const emoji = document.getElementById('resultEmoji');
-      const title = document.getElementById('resultTitle');
-      const desc = document.getElementById('resultDesc');
-      const btn = document.getElementById('resultBtn');
-
-      box.className = "bg-slate-900 border-4 border-emerald-400 w-full max-w-xs rounded-3xl p-5 text-center shadow-2xl";
-      emoji.innerText = "🏆";
-      title.innerText = "全部查明！推敲大獲全勝！";
-      title.className = "text-xl font-black text-emerald-400 comic-font mb-1";
-      desc.innerText = "所有的好人皆已安全，潛伏的狼人也全數落網！";
-      btn.innerText = "前往下一案 ➔";
-      btn.className = "w-full py-2.5 bg-gradient-to-r from-emerald-400 to-teal-500 text-slate-950 font-black rounded-xl text-sm comic-font shadow-md";
-
-      modal.classList.remove('hidden');
-    }
-
-    function triggerDefeat() {
-      SoundFx.lose();
-      const modal = document.getElementById('resultModal');
-      const box = document.getElementById('resultBox');
-      const emoji = document.getElementById('resultEmoji');
-      const title = document.getElementById('resultTitle');
-      const desc = document.getElementById('resultDesc');
-      const btn = document.getElementById('resultBtn');
-
-      box.className = "bg-slate-900 border-4 border-rose-500 w-full max-w-xs rounded-3xl p-5 text-center shadow-2xl";
-      emoji.innerText = "💔";
-      title.innerText = "推敲失敗！三次失誤！";
-      title.className = "text-xl font-black text-rose-500 comic-font mb-1";
-      desc.innerText = "錯誤累積達到 3 次，狼人趁亂逃脫了！請重新挑戰。";
-      btn.innerText = "重新挑戰本案 🔄";
-      btn.className = "w-full py-2.5 bg-gradient-to-r from-rose-500 to-red-600 text-white font-black rounded-xl text-sm comic-font shadow-md";
-
-      modal.classList.remove('hidden');
-    }
-
-    function onResultBtnClick() {
-      document.getElementById('resultModal').classList.add('hidden');
-      if (mistakes >= 3) {
-        initLevel();
-      } else {
-        if (currentLevelIndex < GAME_LEVELS.length - 1) {
-          currentLevelIndex++;
-          initLevel();
-        } else {
-          alert("恭喜通關！五十宗棋盤迷案全數偵破！");
-        }
-      }
-    }
-
-    /* =====================================================================
-       5. 關卡選單與進度存檔
-       ===================================================================== */
-    function toggleLevelModal() {
-      const modal = document.getElementById('levelModal');
-      modal.classList.toggle('hidden');
-      if (!modal.classList.contains('hidden')) {
-        renderLevelSelector();
-      }
-    }
-
-    function renderLevelSelector() {
-      const container = document.getElementById('levelGridContainer');
-      container.innerHTML = '';
-      const cleared = getClearedLevels();
-
-      for (let i = 1; i <= 50; i++) {
-        const btn = document.createElement('button');
-        const isCurrent = (i - 1) === currentLevelIndex;
-        const isDone = cleared.includes(i);
-
-        btn.className = `p-2 rounded-xl font-bold font-mono text-xs flex flex-col items-center justify-center border ${
-          isCurrent 
-            ? 'bg-amber-400 text-slate-950 border-amber-300' 
-            : isDone 
-              ? 'bg-emerald-800/80 text-emerald-200 border-emerald-500' 
-              : 'bg-purple-900/60 text-purple-300 border-purple-700'
-        }`;
-        btn.innerHTML = `<span>${i}</span><span>${isDone ? '⭐' : ''}</span>`;
-        btn.onclick = () => {
-          currentLevelIndex = i - 1;
-          initLevel();
-          toggleLevelModal();
-        };
-        container.appendChild(btn);
-      }
-    }
-
-    function getClearedLevels() {
-      try {
-        return JSON.parse(localStorage.getItem('werewolf_revealed_cleared') || '[]');
-      } catch(e) { return []; }
-    }
-
-    function saveClearedLevel(lvlId) {
-      const list = getClearedLevels();
-      if (!list.includes(lvlId)) {
-        list.push(lvlId);
-        localStorage.setItem('werewolf_revealed_cleared', JSON.stringify(list));
-      }
-    }
-
-    window.addEventListener('DOMContentLoaded', () => {
-      initLevel();
-    });
-  </script>
-</body>
-</html>
+          gridCells[dc] = { coord:
