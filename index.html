@@ -40,7 +40,7 @@
     /* 課桌卡牌 */
     .char-card {
       transition: transform 0.1s ease, box-shadow 0.1s ease;
-      background: #e2e8f0;
+      background: #cbd5e1;
       border: 2px solid #475569;
     }
     .char-card:active {
@@ -61,12 +61,6 @@
       box-shadow: 0 0 12px rgba(239, 68, 68, 0.85);
     }
 
-    /* 卡牌上方緊湊提示看板 */
-    .card-clue-header {
-      background: rgba(15, 23, 42, 0.95);
-      border-bottom: 1px solid #38bdf8;
-    }
-
     @keyframes shake {
       0%, 100% { transform: translateX(0); }
       20%, 60% { transform: translateX(-6px); }
@@ -77,15 +71,15 @@
     }
   </style>
 </head>
-<body class="h-[100dvh] flex flex-col items-center justify-between p-1.5 sm:p-3 text-white overflow-hidden">
+<body class="h-[100dvh] flex flex-col items-center justify-between p-1.5 sm:p-2 text-white overflow-hidden">
 
-  <!-- 頂部資訊列 (緊湊高度) -->
+  <!-- 頂部資訊列 (極簡高度) -->
   <header class="w-full max-w-md flex items-center justify-between px-1 py-0.5 mb-1 flex-shrink-0">
     <button onclick="toggleLevelModal()" class="flex items-center gap-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-2.5 py-1 rounded-xl text-xs shadow-md border-2 border-amber-300">
       <span>📂 案件</span>
       <span id="caseNavText">第 1/50 案</span>
     </button>
-    <div class="flex items-center gap-2">
+    <div class="flex items-center gap-1.5">
       <span id="difficultyBadge" class="text-[9px] font-black px-2 py-0.5 rounded-lg border bg-rose-950 border-rose-500 text-rose-300">
         高壓突襲
       </span>
@@ -97,8 +91,8 @@
     </div>
   </header>
 
-  <!-- 遊戲主盤面：嚴格鎖定一頁 (flex-1 + min-h-0) -->
-  <main id="mainBoard" class="w-full max-w-md board-container rounded-2xl p-1.5 sm:p-2 flex flex-col items-center relative flex-1 min-h-0 overflow-hidden">
+  <!-- 遊戲主盤面：嚴格單頁填滿 (flex-1 + min-h-0) -->
+  <main id="mainBoard" class="w-full max-w-md board-container rounded-2xl p-1.5 flex flex-col items-center relative flex-1 min-h-0 overflow-hidden">
     
     <!-- 頂部狀態面板 -->
     <div class="w-full flex items-center justify-between bg-slate-900/90 rounded-xl px-2 py-1 border border-slate-700 mb-1 flex-shrink-0">
@@ -109,7 +103,7 @@
       </div>
 
       <div class="flex items-center gap-1 text-[10px] bg-slate-950 px-2 py-0.5 rounded-lg border border-slate-800 text-slate-300">
-        <span>已辨識：</span>
+        <span>已揪出：</span>
         <span id="clearedCount" class="font-mono text-amber-300 font-black">0</span>
         <span id="totalCount">/ 18</span>
       </div>
@@ -120,14 +114,14 @@
       </div>
     </div>
 
-    <!-- 教室座次表網格 4x5：固定 5 排等高 (flex-1 h-full) -->
+    <!-- 教室座次表網格 4x5：保證等比填滿整頁高度 -->
     <div class="w-full parchment-inner rounded-xl p-1 relative flex-1 min-h-0 flex flex-col justify-center overflow-hidden">
       <div id="gridBoard" class="grid grid-cols-4 grid-rows-5 gap-1 w-full h-full">
       </div>
     </div>
 
-    <!-- 底部展開式發言提示窗 (高度壓縮，大字號) -->
-    <div id="selectedHintBox" class="w-full bg-slate-950 border border-sky-400 rounded-xl px-2.5 py-1.5 mt-1 text-xs flex items-center gap-2 shadow-lg flex-shrink-0">
+    <!-- 底部展開式發言提示窗 -->
+    <div id="selectedHintBox" class="w-full bg-slate-950 border border-sky-400 rounded-xl px-2.5 py-1 mt-1 text-xs flex items-center gap-2 shadow-lg flex-shrink-0">
       <span class="text-base flex-shrink-0">💬</span>
       <div class="flex-1 overflow-hidden leading-tight">
         <div id="hintSpeaker" class="font-black text-sky-300 text-[10px]">同學八卦筆記板</div>
@@ -139,7 +133,7 @@
   <!-- 點擊卡牌查驗彈窗 -->
   <div id="actionModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3">
     <div class="bg-slate-900 border-4 border-sky-400 w-full max-w-xs rounded-2xl p-4 text-center shadow-2xl relative">
-      <div class="w-20 h-20 mx-auto rounded-xl bg-slate-800 border-2 border-sky-400/50 p-0.5 mb-2 overflow-hidden flex items-center justify-center" id="actionModalAvatar">
+      <div class="w-24 h-24 mx-auto rounded-xl bg-slate-800 border-2 border-sky-400/50 p-1 mb-2 overflow-hidden flex items-center justify-center" id="actionModalAvatar">
       </div>
       <h3 class="text-base font-black text-sky-300 comic-font mb-0.5" id="actionModalName">選擇身份</h3>
       <p class="text-[11px] text-sky-200/90 mb-3 bg-slate-950 p-2.5 rounded-xl border border-slate-800 leading-normal font-bold" id="actionModalCluePreview"></p>
@@ -293,9 +287,8 @@
           };
         });
 
-        // 嚴格記錄全域語義，絕不允許出現語意相同的線索
         const usedSignatures = new Set();
-        let zeroNeighborUsed = false; // 強制全場最多只有 1 個人能說「周圍沒有狼」
+        let zeroNeighborUsed = false;
 
         goodCoords.forEach((coord) => {
           const cell = gridCells[coord];
@@ -345,14 +338,13 @@
           const otherGood = goodCoords.find(gc => gc !== coord && gc[0] !== c && gc[1] !== r);
           const aWolf = wolfCoords[0];
 
-          // 豐富多樣題型池 (依優先序篩選未使用的型態)
           const generatorPool = [];
 
-          // 墨鏡/眼鏡特徵題
+          // 墨鏡特徵題
           if (!usedSignatures.has(`glasses`)) {
             generatorPool.push({
               sig: `glasses`,
-              text: glassesWolves === 0 ? `戴墨鏡/眼鏡的人全是好人` : `戴墨鏡者中有 ${glassesWolves} 隻狼`
+              text: glassesWolves === 0 ? `戴墨鏡/眼鏡的人全好人` : `戴墨鏡者中有${glassesWolves}隻狼`
             });
           }
 
@@ -360,7 +352,7 @@
           if (rightCoords.length >= 2 && !usedSignatures.has(`right_${r}`)) {
             generatorPool.push({
               sig: `right_${r}`,
-              text: `我右手邊線上共有 ${rightWolves} 隻狼`
+              text: `右手邊線上共有${rightWolves}隻狼`
             });
           }
 
@@ -368,7 +360,7 @@
           if (leftCoords.length >= 2 && !usedSignatures.has(`left_${r}`)) {
             generatorPool.push({
               sig: `left_${r}`,
-              text: `我左手邊線上共有 ${leftWolves} 隻狼`
+              text: `左手邊線上共有${leftWolves}隻狼`
             });
           }
 
@@ -376,7 +368,7 @@
           if (frontCoords.length >= 2 && !usedSignatures.has(`front_${c}`)) {
             generatorPool.push({
               sig: `front_${c}`,
-              text: `我正前方直線上藏有 ${frontWolves} 隻狼`
+              text: `正前方直線上藏${frontWolves}隻狼`
             });
           }
 
@@ -384,7 +376,7 @@
           if (backCoords.length >= 2 && !usedSignatures.has(`back_${c}`)) {
             generatorPool.push({
               sig: `back_${c}`,
-              text: `我正後方直線上共有 ${backWolves} 隻狼`
+              text: `正後方直線上共${backWolves}隻狼`
             });
           }
 
@@ -392,14 +384,14 @@
           if (!usedSignatures.has(`col_fem_${c}`)) {
             generatorPool.push({
               sig: `col_fem_${c}`,
-              text: femaleInCol === 0 ? `${c}列的所有女生都是好人` : `${c}列女生中有 ${femaleInCol} 隻狼`
+              text: femaleInCol === 0 ? `${c}列女生全都是好人` : `${c}列女生中有${femaleInCol}隻狼`
             });
           }
 
           if (!usedSignatures.has(`row_male_${r}`)) {
             generatorPool.push({
               sig: `row_male_${r}`,
-              text: maleInRow === 0 ? `第${r}排的所有男生都是好人` : `第${r}排男生中藏有 ${maleInRow} 隻狼`
+              text: maleInRow === 0 ? `第${r}排男生全都是好人` : `第${r}排男生藏${maleInRow}隻狼`
             });
           }
 
@@ -407,7 +399,7 @@
           if (!usedSignatures.has(`diag_${coord}`)) {
             generatorPool.push({
               sig: `diag_${coord}`,
-              text: diagWolves === 0 ? `我的斜對角四格全是好人` : `我的斜對角座位藏著 ${diagWolves} 隻狼`
+              text: diagWolves === 0 ? `斜對角四格全是好人` : `斜對角座位藏${diagWolves}隻狼`
             });
           }
 
@@ -416,8 +408,8 @@
             generatorPool.push({
               sig: `window_door`,
               text: windowWolves === doorWolves 
-                ? `靠窗區與靠門區的狼數相等` 
-                : (windowWolves > doorWolves ? `靠窗邊（A/B列）的狼比較多` : `靠門邊（C/D列）的狼比較多`)
+                ? `靠窗區與靠門區狼數相等` 
+                : (windowWolves > doorWolves ? `靠窗邊（A/B列）狼較多` : `靠門邊（C/D列）狼較多`)
             });
           }
 
@@ -425,7 +417,7 @@
           if (aWolf && otherGood && !usedSignatures.has(`mutual_${otherGood}`)) {
             generatorPool.push({
               sig: `mutual_${otherGood}`,
-              text: `【${otherGood}】與【${aWolf}】中恰有1隻狼`
+              text: `【${otherGood}】與【${aWolf}】中恰1狼`
             });
           }
 
@@ -437,31 +429,29 @@
             });
           }
 
-          // 十字相鄰題 (全場限 1 人說 0 隻狼，有狼時才多給)
+          // 十字相鄰題
           if (crossWolves > 0 && !usedSignatures.has(`cross_${crossWolves}`)) {
             generatorPool.push({
               sig: `cross_${crossWolves}`,
-              text: `我的周圍上下左右藏著 ${crossWolves} 匹狼`
+              text: `周圍十字鄰格藏${crossWolves}匹狼`
             });
           } else if (crossWolves === 0 && !zeroNeighborUsed) {
             zeroNeighborUsed = true;
             generatorPool.push({
               sig: `zero_neighbor`,
-              text: `我的周圍完全沒有狼人`
+              text: `周圍上下左右沒有狼`
             });
           }
 
-          // 從題型池中抽出未使用的
           let selected = generatorPool.find(item => !usedSignatures.has(item.sig));
 
           if (selected) {
             usedSignatures.add(selected.sig);
             cell.clue = selected.text;
           } else {
-            // 兜底保證絕不重複
             const fallbackSig = `fallback_${c}${r}`;
             usedSignatures.add(fallbackSig);
-            cell.clue = `${c}列與第${r}排交叉處安全`;
+            cell.clue = `${c}列與第${r}排交叉安全`;
           }
         });
 
@@ -565,34 +555,33 @@
             cellEl.innerHTML = `<span class="text-xl text-slate-400">🚫</span>`;
           } else {
             cellEl.id = `card-${coord}`;
-            // 緊湊卡牌佈局，自適應高度
-            cellEl.className = "char-card rounded-lg flex flex-col justify-between items-center relative cursor-pointer shadow-sm overflow-hidden bg-slate-200 border border-slate-600";
+            cellEl.className = "char-card rounded-lg flex flex-col justify-between items-center relative cursor-pointer shadow-sm overflow-hidden bg-slate-100 border border-slate-500";
             cellEl.onclick = () => onCardClicked(coord);
 
             const hasBubble = displayedClues[coord] && cellData.clue;
 
             cellEl.innerHTML = `
-              <!-- 卡片頂部座標與性別 -->
-              <div class="w-full flex justify-between items-center px-1 text-[9px] font-black text-slate-800 bg-white/80 border-b border-slate-300 leading-none py-0.5">
-                <span class="font-mono text-purple-900">${coord}</span>
+              <!-- 卡片頂部座標與性別標記 -->
+              <div class="w-full flex justify-between items-center px-1 text-[9px] font-black text-slate-800 bg-white/90 border-b border-slate-300 leading-none py-0.5 flex-shrink-0 z-10">
+                <span class="font-mono text-indigo-900 font-bold">${coord}</span>
                 <span>${cellData.isFemale ? '♀️' : '♂️'}</span>
               </div>
 
-              <!-- 卡片上方自適應線索區 -->
-              <div id="clue-box-${coord}" class="w-full px-0.5 py-0.5 flex items-center justify-center text-center card-clue-header ${hasBubble ? '' : 'hidden'}">
-                <span class="text-[9px] sm:text-[10px] font-black text-sky-300 leading-tight">${cellData.clue || ''}</span>
-              </div>
-
-              <!-- 學生頭像圖片 (object-contain / object-cover 自適應填滿) -->
-              <div class="w-full flex-1 overflow-hidden flex items-center justify-center relative p-0.5 min-h-0" id="avatar-${coord}">
-                <img src="${cellData.fileBase}.PNG" onerror="handleImgError(this, '${cellData.fileBase}')" class="w-full h-full object-cover object-top rounded-sm" alt="${cellData.name}" />
-                <div id="check-overlay-${coord}" class="absolute inset-0 bg-emerald-500/30 flex items-center justify-center hidden">
+              <!-- 完整半身像展示區 (object-contain 保持全貌不截斷) -->
+              <div class="w-full flex-1 overflow-hidden flex items-center justify-center relative p-0.5 min-h-0 bg-slate-200" id="avatar-${coord}">
+                <img src="${cellData.fileBase}.PNG" onerror="handleImgError(this, '${cellData.fileBase}')" class="w-full h-full object-contain" alt="${cellData.name}" />
+                <div id="check-overlay-${coord}" class="absolute inset-0 bg-emerald-500/25 flex items-center justify-center hidden">
                   <span class="text-2xl font-black text-emerald-400 drop-shadow">✔</span>
                 </div>
               </div>
 
+              <!-- 卡片線索提示條 (緊貼頭像下方，不遮擋臉部) -->
+              <div id="clue-box-${coord}" class="w-full px-0.5 py-0.5 bg-slate-900 border-t border-sky-400/80 flex items-center justify-center text-center flex-shrink-0 ${hasBubble ? '' : 'hidden'}">
+                <span class="text-[9px] font-black text-sky-300 leading-tight truncate">${cellData.clue || ''}</span>
+              </div>
+
               <!-- 卡片底部名字標籤 -->
-              <div class="w-full text-center text-[9px] font-black bg-slate-800 text-slate-100 py-0.5 truncate leading-none" id="name-${coord}">
+              <div class="w-full text-center text-[9px] font-black bg-slate-800 text-slate-100 py-0.5 truncate leading-none flex-shrink-0" id="name-${coord}">
                 ${cellData.name}
               </div>
             `;
@@ -624,7 +613,7 @@
       if (!revealedStatus[coord]) {
         activeSelectingCoord = coord;
         document.getElementById('actionModalAvatar').innerHTML = `
-          <img src="${cellData.fileBase}.PNG" onerror="handleImgError(this, '${cellData.fileBase}')" class="w-full h-full object-cover rounded-xl" alt="${cellData.name}" />
+          <img src="${cellData.fileBase}.PNG" onerror="handleImgError(this, '${cellData.fileBase}')" class="w-full h-full object-contain" alt="${cellData.name}" />
         `;
         document.getElementById('actionModalName').innerText = `${coord} 課桌 · ${cellData.name}`;
         
@@ -660,8 +649,8 @@
           cardEl.className = "char-card revealed-wolf rounded-lg flex flex-col justify-between items-center relative shadow-md overflow-hidden border border-rose-600";
           
           document.getElementById(`avatar-${coord}`).innerHTML = `
-            <div class="relative w-full h-full">
-              <img src="${cellData.fileBase}.PNG" onerror="handleImgError(this, '${cellData.fileBase}')" class="w-full h-full object-cover rounded grayscale contrast-150 brightness-50" />
+            <div class="relative w-full h-full flex items-center justify-center bg-rose-950/40">
+              <img src="${cellData.fileBase}.PNG" onerror="handleImgError(this, '${cellData.fileBase}')" class="w-full h-full object-contain grayscale contrast-150 brightness-50" />
               <span class="absolute inset-0 flex items-center justify-center text-2xl animate-pulse">🐺</span>
             </div>
           `;
@@ -686,7 +675,7 @@
 
           const clueBox = document.getElementById(`clue-box-${coord}`);
           if (clueBox && cellData.clue) {
-            clueBox.innerHTML = `<span class="text-[9px] sm:text-[10px] font-black text-emerald-300 leading-tight">${cellData.clue}</span>`;
+            clueBox.innerHTML = `<span class="text-[9px] font-black text-emerald-300 leading-tight truncate">${cellData.clue}</span>`;
             clueBox.classList.remove('hidden');
           }
 
@@ -768,10 +757,10 @@
       box.className = "bg-slate-900 border-4 border-rose-500 w-full max-w-xs rounded-2xl p-4 text-center shadow-2xl";
       emoji.innerText = "💔";
       title.innerText = "放學危機！三次失誤！";
-      title.className = "text-lg font-black text-rose-500 comic-font mb-1";
+      title.className = "text-xl font-black text-rose-500 comic-font mb-1";
       desc.innerText = "失誤累積達到 3 次！狼群趁亂佔領了教室，請重新推導！";
       btn.innerText = "重考本案 🔄";
-      btn.className = "w-full py-2 bg-gradient-to-r from-rose-500 to-red-600 text-white font-black rounded-xl text-sm comic-font shadow-md";
+      btn.className = "w-full py-2.5 bg-gradient-to-r from-rose-500 to-red-600 text-white font-black rounded-xl text-sm comic-font shadow-md";
 
       modal.classList.remove('hidden');
     }
