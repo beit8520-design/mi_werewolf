@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>狼人在身邊 - 邏輯推理大師</title>
+  <title>高校狼人殺 - 班級推理之謎</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Noto+Sans+TC:wght@500;700;900&display=swap');
@@ -13,48 +13,55 @@
       touch-action: manipulation;
       user-select: none;
       -webkit-user-select: none;
-      background: #110e1b;
+      background: #0f172a;
     }
 
     .comic-font {
       font-family: 'ZCOOL KuaiLe', cursive, sans-serif;
     }
 
+    /* 校園黑板/儲物櫃風外框 */
     .board-container {
-      background: #9d80d8;
-      border: 6px solid #4a3869;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.8), inset 0 0 15px rgba(0,0,0,0.3);
+      background: #1e293b;
+      border: 6px solid #334155;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.8), inset 0 0 15px rgba(0,0,0,0.5);
     }
 
+    /* 班級教室黑板底色 */
     .parchment-inner {
-      background: #795cb2;
-      box-shadow: inset 0 0 12px rgba(0,0,0,0.5);
+      background: #134e4a;
+      box-shadow: inset 0 0 15px rgba(0,0,0,0.6);
+      border: 3px solid #0f766e;
     }
 
+    /* 學生課桌卡牌 */
     .char-card {
       transition: transform 0.12s ease, box-shadow 0.12s ease;
-      background: #d8b8ff;
-      border: 3px solid #5a3d8a;
+      background: #e2e8f0;
+      border: 3px solid #64748b;
     }
     .char-card:active {
       transform: scale(0.96);
     }
 
+    /* 正確好人同學（綠色標籤） */
     .revealed-good {
-      background: #86efac !important;
-      border-color: #16a34a !important;
+      background: #bbf7d0 !important;
+      border-color: #22c55e !important;
       box-shadow: 0 0 12px rgba(34, 197, 94, 0.75);
     }
 
+    /* 偽裝狼人同學（紅色標籤） */
     .revealed-wolf {
-      background: #fca5a5 !important;
-      border-color: #dc2626 !important;
+      background: #fecaca !important;
+      border-color: #ef4444 !important;
       box-shadow: 0 0 12px rgba(239, 68, 68, 0.75);
     }
 
+    /* 漫畫發言便利貼 / 氣泡 */
     .bubble-tag {
       background: rgba(15, 23, 42, 0.95);
-      border: 1.5px solid #fbbf24;
+      border: 1.5px solid #38bdf8;
       box-shadow: 0 4px 10px rgba(0,0,0,0.5);
       animation: popIn 0.2s ease-out;
     }
@@ -75,13 +82,745 @@
 </head>
 <body class="min-h-screen flex flex-col items-center justify-between p-2 sm:p-4 text-white">
 
-  <!-- 頂部資訊列 -->
+  <!-- 頂部資訊列：學校手冊風 -->
   <header class="w-full max-w-md flex items-center justify-between px-2 py-1 mb-1">
-    <button onclick="toggleLevelModal()" class="flex items-center gap-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-3 py-1 rounded-xl text-xs shadow-md border-2 border-amber-300">
-      <span>📖 案卷</span>
+    <button onclick="toggleLevelModal()" class="flex items-center gap-1 bg-sky-500 hover:bg-sky-400 text-slate-950 font-black px-3 py-1 rounded-xl text-xs shadow-md border-2 border-sky-300">
+      <span>🏫 班級名冊</span>
       <span id="caseNavText">第 1/50 案</span>
     </button>
     <div class="flex items-center gap-2">
-      <div class="flex items-center gap-1 bg-purple-950/80 px-2.5 py-1 rounded-xl border border-purple-400/40 text-xs shadow">
+      <!-- 錯誤機會心心 (3 次扣分機會) -->
+      <div class="flex items-center gap-1 bg-slate-800/90 px-2.5 py-1 rounded-xl border border-slate-600 text-xs shadow">
         <span class="text-sm">❤️</span>
         <span id="livesDisplay" class="font-black text-rose-400 tracking-wider">❤️❤️❤️</span>
+      </div>
+      <button onclick="toggleAudio()" id="audioBtn" class="bg-slate-800 p-1.5 rounded-xl text-sm border border-slate-600">🔊</button>
+    </div>
+  </header>
+
+  <!-- 遊戲主盤面：教室黑板座次表 -->
+  <main id="mainBoard" class="w-full max-w-md board-container rounded-3xl p-2 sm:p-3.5 flex flex-col items-center relative flex-1">
+    
+    <!-- 頂部計數面板 -->
+    <div class="w-full flex items-center justify-between bg-slate-900/80 rounded-2xl p-2 border-2 border-slate-700 mb-2">
+      <div class="flex items-center gap-2 bg-slate-950/80 px-2.5 py-1 rounded-xl border border-slate-800">
+        <span class="text-lg">🐺</span>
+        <span id="wolvesRemaining" class="text-rose-400 font-black font-mono text-base">2</span>
+        <span class="text-[10px] text-slate-300 font-bold">隻偽裝狼生</span>
+      </div>
+
+      <div class="flex items-center gap-1 text-xs bg-slate-950/80 px-2.5 py-1 rounded-xl border border-slate-800 text-slate-300">
+        <span>已辨識：</span>
+        <span id="clearedCount" class="font-mono text-sky-400 font-black">0</span>
+        <span id="totalCount">/ 18</span>
+      </div>
+
+      <div class="flex items-center gap-1 font-black text-amber-300 comic-font text-sm">
+        <span class="w-3 h-3 bg-amber-400 rounded-sm inline-block"></span>
+        <span id="boardCaseIndicator">1/50</span>
+      </div>
+    </div>
+
+    <!-- 教室 4x5 學生座次表 (A1 ~ D5) -->
+    <div class="w-full parchment-inner rounded-2xl p-1.5 sm:p-2.5 relative flex-1 flex flex-col justify-center">
+      <div id="gridBoard" class="grid grid-cols-4 gap-1.5 sm:gap-2 w-full aspect-[4/5]">
+      </div>
+    </div>
+
+    <!-- 即時學生發言便利貼提示窗 -->
+    <div id="selectedHintBox" class="w-full bg-slate-950/95 border-2 border-sky-400/60 rounded-xl p-2.5 mt-2 text-xs flex items-center gap-2">
+      <span class="text-xl flex-shrink-0">🎒</span>
+      <div class="flex-1 overflow-hidden">
+        <div id="hintSpeaker" class="font-bold text-sky-300 text-[11px]">教室風紀筆記板</div>
+        <div id="hintQuote" class="text-slate-200 text-xs truncate">點選帶有 💬 發言氣泡的同學，推敲誰是混入校園的狼人！</div>
+      </div>
+    </div>
+  </main>
+
+  <!-- 點擊學生卡片查驗彈窗 -->
+  <div id="actionModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border-4 border-sky-400 w-full max-w-xs rounded-3xl p-5 text-center shadow-2xl relative">
+      <div class="w-16 h-16 mx-auto rounded-full bg-slate-800 border-2 border-sky-400/50 p-1 mb-2 overflow-hidden" id="actionModalAvatar">
+      </div>
+      <h3 class="text-lg font-black text-sky-300 comic-font mb-0.5" id="actionModalName">選擇身份</h3>
+      <p class="text-[11px] text-sky-200/90 mb-3 bg-slate-800/80 p-2 rounded-xl border border-slate-700" id="actionModalCluePreview"></p>
+
+      <div class="grid grid-cols-2 gap-3 mb-2">
+        <button onclick="chooseIdentity('good')" class="py-3 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-black rounded-2xl border-2 border-emerald-300 shadow flex flex-col items-center gap-0.5">
+          <span class="text-2xl">🎓</span>
+          <span class="text-xs">無辜同學 (好人)</span>
+        </button>
+        <button onclick="chooseIdentity('wolf')" class="py-3 bg-rose-600 hover:bg-rose-500 active:scale-95 text-white font-black rounded-2xl border-2 border-rose-300 shadow flex flex-col items-center gap-0.5">
+          <span class="text-2xl">🐺</span>
+          <span class="text-xs">混入狼人 (壞人)</span>
+        </button>
+      </div>
+
+      <button onclick="closeActionModal()" class="w-full py-2 bg-slate-800 text-slate-400 hover:text-white font-bold text-xs rounded-xl mt-1">
+        取消
+      </button>
+    </div>
+  </div>
+
+  <!-- 關卡選單 Modal -->
+  <div id="levelModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3">
+    <div class="bg-slate-900 border-2 border-sky-400 w-full max-w-sm rounded-3xl p-4 shadow-2xl flex flex-col max-h-[80vh]">
+      <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+        <h3 class="font-black text-sky-300 text-base comic-font">校園案件目錄 (共 50 關)</h3>
+        <button onclick="toggleLevelModal()" class="text-white font-mono text-xl">✕</button>
+      </div>
+      <div class="grid grid-cols-5 gap-2 overflow-y-auto py-3 my-1" id="levelGridContainer">
+      </div>
+    </div>
+  </div>
+
+  <!-- 勝負結果彈窗 -->
+  <div id="resultModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div id="resultBox" class="bg-slate-900 border-4 w-full max-w-xs rounded-3xl p-5 text-center shadow-2xl">
+      <div id="resultEmoji" class="text-5xl mb-2">🎉</div>
+      <h3 id="resultTitle" class="text-xl font-black comic-font mb-1">推敲成功！</h3>
+      <p id="resultDesc" class="text-xs text-slate-300 mb-4 leading-relaxed">守護了班級的平靜，偽裝狼人全數被抓出！</p>
+      
+      <button id="resultBtn" onclick="onResultBtnClick()" class="w-full py-2.5 bg-gradient-to-r from-sky-400 to-indigo-500 text-slate-950 font-black rounded-xl text-sm comic-font shadow-md">
+        前往下一案 ➔
+      </button>
+    </div>
+  </div>
+
+  <script>
+    /* =====================================================================
+       1. 全新設計：校園風 SVG 高清人物立繪圖庫（男女同學 + 怪物狼人）
+       ===================================================================== */
+    const AVATARS = {
+      // 1. 水手服短髮班長 (女)
+      student_f1: `
+        <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow">
+          <circle cx="50" cy="50" r="46" fill="#0284c7"/>
+          <!-- 水手服領子與白襯衫 -->
+          <path d="M25,82 Q50,56 75,82" fill="#ffffff"/>
+          <path d="M32,74 L50,88 L68,74 L58,62 L42,62 Z" fill="#0369a1"/>
+          <polygon points="46,72 54,72 50,82" fill="#ef4444"/>
+          <!-- 臉與五官 -->
+          <circle cx="50" cy="42" r="18" fill="#fed7aa"/>
+          <!-- 眼鏡 -->
+          <circle cx="43" cy="42" r="6" fill="none" stroke="#d97706" stroke-width="1.8"/>
+          <circle cx="57" cy="42" r="6" fill="none" stroke="#d97706" stroke-width="1.8"/>
+          <line x1="49" y1="42" x2="51" y2="42" stroke="#d97706" stroke-width="1.8"/>
+          <circle cx="43" cy="42" r="2.5" fill="#0f172a"/>
+          <circle cx="57" cy="42" r="2.5" fill="#0f172a"/>
+          <path d="M47,49 Q50,52 53,49" stroke="#f43f5e" stroke-width="1.5" fill="none"/>
+          <!-- 深藍短髮 -->
+          <path d="M26,36 Q50,14 74,36 Q78,54 70,54 Q66,32 50,30 Q34,32 30,54 Q22,54 26,36 Z" fill="#1e293b"/>
+        </svg>`,
+
+      // 2. 雙馬尾校花/啦啦隊 (女)
+      student_f2: `
+        <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow">
+          <circle cx="50" cy="50" r="46" fill="#be185d"/>
+          <!-- 學院粉紅針織毛衣 -->
+          <path d="M24,84 Q50,56 76,84" fill="#f472b6"/>
+          <path d="M42,65 L50,75 L58,65 Z" fill="#ffffff"/>
+          <!-- 臉蛋 -->
+          <circle cx="50" cy="43" r="17" fill="#fde047" opacity="0.9"/>
+          <!-- 眼睛與櫻桃小嘴 -->
+          <circle cx="43" cy="43" r="3" fill="#831843"/>
+          <circle cx="57" cy="43" r="3" fill="#831843"/>
+          <circle cx="44" cy="41" r="1" fill="#ffffff"/>
+          <circle cx="58" cy="41" r="1" fill="#ffffff"/>
+          <path d="M47,50 Q50,53 53,50" stroke="#be185d" stroke-width="1.8" fill="none"/>
+          <!-- 雙馬尾棕髮 + 蝴蝶結 -->
+          <path d="M28,34 Q50,16 72,34 Q74,48 68,48 Q64,30 50,28 Q36,30 32,48 Q26,48 28,34 Z" fill="#78350f"/>
+          <!-- 左右馬尾束 -->
+          <path d="M26,36 Q10,45 16,62 Q24,56 26,42 Z" fill="#78350f"/>
+          <path d="M74,36 Q90,45 84,62 Q76,56 74,42 Z" fill="#78350f"/>
+          <circle cx="26" cy="38" r="4" fill="#fbbf24"/>
+          <circle cx="74" cy="38" r="4" fill="#fbbf24"/>
+        </svg>`,
+
+      // 3. 風紀股長黑長直千金 (女)
+      student_f3: `
+        <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow">
+          <circle cx="50" cy="50" r="46" fill="#047857"/>
+          <!-- 深綠西裝校服與領帶 -->
+          <path d="M25,84 Q50,58 75,84" fill="#065f46"/>
+          <polygon points="45,64 55,64 53,78 50,84 47,78" fill="#fbbf24"/>
+          <!-- 臉蛋 -->
+          <circle cx="50" cy="42" r="17" fill="#fed7aa"/>
+          <circle cx="43" cy="42" r="2.8" fill="#064e3b"/>
+          <circle cx="57" cy="42" r="2.8" fill="#064e3b"/>
+          <!-- 氣質黑長直髮與齊瀏海 -->
+          <path d="M24,34 Q50,14 76,34 L80,75 L70,72 L70,48 L30,48 L30,72 L20,75 Z" fill="#0f172a"/>
+          <!-- 髮箍 -->
+          <path d="M28,32 Q50,16 72,32" stroke="#fde047" stroke-width="3" fill="none"/>
+        </svg>`,
+
+      // 4. 文靜文藝美術社長 (女)
+      student_f4: `
+        <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow">
+          <circle cx="50" cy="50" r="46" fill="#9333ea"/>
+          <!-- 米色開衫與格子襯衫 -->
+          <path d="M25,84 Q50,60 75,84" fill="#fef08a"/>
+          <!-- 臉蛋 -->
+          <circle cx="50" cy="43" r="17" fill="#ffedd5"/>
+          <circle cx="43" cy="43" r="2.5" fill="#3b0764"/>
+          <circle cx="57" cy="43" r="2.5" fill="#3b0764"/>
+          <path d="M47,49 Q50,51 53,49" stroke="#9333ea" stroke-width="1.5" fill="none"/>
+          <!-- 蓬鬆捲髮與貝雷帽 -->
+          <path d="M26,38 Q50,18 74,38 Q78,60 72,60 Q66,35 50,33 Q34,35 28,60 Z" fill="#581c87"/>
+          <!-- 貝雷帽 -->
+          <ellipse cx="50" cy="26" rx="28" ry="12" fill="#7e22ce"/>
+          <circle cx="50" cy="14" r="2.5" fill="#7e22ce"/>
+        </svg>`,
+
+      // 5. 圖書館學霸少年 (男)
+      student_m1: `
+        <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow">
+          <circle cx="50" cy="50" r="46" fill="#1e293b"/>
+          <!-- 灰色開襟毛衣與襯衫 -->
+          <path d="M22,84 Q50,56 78,84" fill="#475569"/>
+          <polygon points="44,62 56,62 50,76" fill="#ffffff"/>
+          <polygon points="48,66 52,66 50,74" fill="#0284c7"/>
+          <!-- 臉蛋與眼鏡 -->
+          <circle cx="50" cy="40" r="17" fill="#fbcfe8"/>
+          <!-- 圓框眼鏡 -->
+          <circle cx="42" cy="40" r="6" fill="none" stroke="#000000" stroke-width="1.8"/>
+          <circle cx="58" cy="40" r="6" fill="none" stroke="#000000" stroke-width="1.8"/>
+          <line x1="48" y1="40" x2="52" y2="40" stroke="#000000" stroke-width="1.8"/>
+          <circle cx="42" cy="40" r="2.5" fill="#0f172a"/>
+          <circle cx="58" cy="40" r="2.5" fill="#0f172a"/>
+          <!-- 俐落深藍短髮 -->
+          <path d="M26,30 Q50,12 74,30 L74,22 Q50,10 26,22 Z" fill="#0f172a"/>
+          <path d="M28,32 L36,42 L42,32 L52,40 L60,30 L68,38 L72,30 Z" fill="#0f172a"/>
+        </svg>`,
+
+      // 6. 體育股長熱血男（OK繃刺蝟頭）(男)
+      student_m2: `
+        <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow">
+          <circle cx="50" cy="50" r="46" fill="#b45309"/>
+          <!-- 運動外套夾克 -->
+          <path d="M20,84 Q50,56 80,84" fill="#ea580c"/>
+          <rect x="47" y="62" width="6" height="22" fill="#ffffff"/>
+          <!-- 臉部與創可貼 -->
+          <circle cx="50" cy="41" r="18" fill="#fed7aa"/>
+          <circle cx="42" cy="40" r="3" fill="#451a03"/>
+          <circle cx="58" cy="40" r="3" fill="#451a03"/>
+          <!-- 鼻樑創可貼 OK 繃 -->
+          <rect x="44" y="44" width="12" height="4" transform="rotate(-8 50 46)" fill="#fbbf24" stroke="#d97706" stroke-width="1"/>
+          <!-- 陽光刺蝟頭短髮 -->
+          <polygon points="30,28 36,12 44,25 50,8 56,25 64,12 70,28" fill="#78350f"/>
+        </svg>`,
+
+      // 7. 神秘連帽衫耳機少年 (男)
+      student_m3: `
+        <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow">
+          <circle cx="50" cy="50" r="46" fill="#312e81"/>
+          <!-- 黑色連帽衛衣 -->
+          <path d="M20,84 Q50,54 80,84" fill="#18181b"/>
+          <!-- 連帽輪廓 -->
+          <path d="M26,38 Q50,10 74,38 Q78,70 70,70 Q66,42 50,40 Q34,42 30,70 Q22,70 26,38 Z" fill="#27272a"/>
+          <!-- 臉蛋 -->
+          <circle cx="50" cy="44" r="15" fill="#ffedd5"/>
+          <circle cx="44" cy="44" r="2.5" fill="#4f46e5"/>
+          <circle cx="56" cy="44" r="2.5" fill="#4f46e5"/>
+          <!-- 遮眼碎髮 -->
+          <path d="M38,36 L46,45 L52,38 L58,46 L62,36 Z" fill="#3730a3"/>
+          <!-- 脖子上的耳機 -->
+          <path d="M30,60 Q50,74 70,60" stroke="#06b6d4" stroke-width="5" fill="none"/>
+          <rect x="26" y="55" width="8" height="12" rx="3" fill="#0891b2"/>
+          <rect x="66" y="55" width="8" height="12" rx="3" fill="#0891b2"/>
+        </svg>`,
+
+      // 8. 校園狂暴狼人（化身撕裂校服怪物）
+      wolf: `
+        <svg viewBox="0 0 100 100" class="w-full h-full animate-pulse drop-shadow-lg">
+          <circle cx="50" cy="50" r="46" fill="#450a0a"/>
+          <!-- 撕破的校服與血跡 -->
+          <path d="M18,84 Q50,50 82,84" fill="#7f1d1d"/>
+          <polygon points="38,65 42,76 46,68 52,80 56,66" fill="#fee2e2"/>
+          <!-- 尖狼耳 -->
+          <polygon points="20,18 32,38 14,40" fill="#18181b" stroke="#dc2626" stroke-width="2"/>
+          <polygon points="80,18 68,38 86,40" fill="#18181b" stroke="#dc2626" stroke-width="2"/>
+          <!-- 狼臉部 -->
+          <circle cx="50" cy="46" r="22" fill="#18181b"/>
+          <!-- 血紅雙眼 -->
+          <polygon points="36,44 44,46 38,49" fill="#ef4444"/>
+          <polygon points="64,44 56,46 62,49" fill="#ef4444"/>
+          <!-- 利齒狼吻 -->
+          <path d="M40,56 Q50,70 60,56 Z" fill="#450a0a" stroke="#dc2626" stroke-width="1.5"/>
+          <polygon points="44,56 46,64 48,56" fill="#ffffff"/>
+          <polygon points="52,56 54,64 56,56" fill="#ffffff"/>
+        </svg>`
+    };
+
+    /* =====================================================================
+       2. 50 關校園主題邏輯線索數據庫
+       ===================================================================== */
+    const COLS = ['A', 'B', 'C', 'D'];
+    const ROWS = [1, 2, 3, 4, 5];
+    const GAME_LEVELS = [];
+
+    (function generateSchoolLevels() {
+      // 校園風角色姓名與職務稱號
+      const schoolGirls = [
+        { name: '班長·沐照', avatar: 'student_f1' },
+        { name: '校花·咖喱', avatar: 'student_f2' },
+        { name: '風紀·夏天', avatar: 'student_f3' },
+        { name: '文藝·燕子', avatar: 'student_f4' },
+        { name: '學霸·沐熙', avatar: 'student_f1' },
+        { name: '副社·多多', avatar: 'student_f2' },
+        { name: '保健·小倩', avatar: 'student_f3' },
+        { name: '學藝·紫苑', avatar: 'student_f4' }
+      ];
+
+      const schoolBoys = [
+        { name: '學霸·小馬', avatar: 'student_m1' },
+        { name: '體育·健民', avatar: 'student_m2' },
+        { name: '轉學·小賴', avatar: 'student_m3' },
+        { name: '文藝·金冰', avatar: 'student_m1' },
+        { name: '活動·小豬', avatar: 'student_m2' },
+        { name: '總務·館長', avatar: 'student_m3' },
+        { name: '熱血·李逍', avatar: 'student_m2' },
+        { name: '電競·阿強', avatar: 'student_m3' }
+      ];
+
+      for (let lvl = 1; lvl <= 50; lvl++) {
+        let wolfNum = 2;
+        if (lvl <= 12) wolfNum = 2;
+        else if (lvl <= 30) wolfNum = 3;
+        else wolfNum = 4;
+
+        // 隨機設置課堂空桌／講台障礙格 🚫
+        const disabledCoords = (lvl % 2 === 1) ? ['A1', 'A4'] : ['D1', 'C5'];
+        const validCoords = [];
+        COLS.forEach(c => {
+          ROWS.forEach(r => {
+            const coord = `${c}${r}`;
+            if (!disabledCoords.includes(coord)) validCoords.push(coord);
+          });
+        });
+
+        // 隨機決定混入學校的狼人座次
+        const wolfCoords = [];
+        const shuffled = [...validCoords].sort(() => 0.5 - Math.sin(lvl * 11.3 + 2.7));
+        for (let w = 0; w < wolfNum; w++) {
+          wolfCoords.push(shuffled[w]);
+        }
+
+        const gridCells = {};
+        const goodCoords = [];
+
+        validCoords.forEach((coord, idx) => {
+          const isWolf = wolfCoords.includes(coord);
+          if (!isWolf) goodCoords.push(coord);
+
+          const isFemale = (idx % 2 === 0);
+          const studentProfile = isFemale 
+            ? schoolGirls[idx % schoolGirls.length] 
+            : schoolBoys[idx % schoolBoys.length];
+
+          gridCells[coord] = {
+            coord: coord,
+            col: coord[0],
+            row: parseInt(coord[1]),
+            name: studentProfile.name,
+            isFemale: isFemale,
+            isWolf: isWolf,
+            avatarKey: studentProfile.avatar,
+            disabled: false,
+            clue: ""
+          };
+        });
+
+        // 產生校園風具體推理線索
+        goodCoords.forEach((coord, gIdx) => {
+          const cell = gridCells[coord];
+          const c = cell.col;
+          const r = cell.row;
+          const cIdx = COLS.indexOf(c);
+
+          const rowWolves = wolfCoords.filter(w => w[1] == r).length;
+          const colWolves = wolfCoords.filter(w => w[0] == c).length;
+          
+          const neighbors = [
+            `${COLS[cIdx - 1]}${r}`, `${COLS[cIdx + 1]}${r}`,
+            `${c}${r - 1}`, `${c}${r + 1}`
+          ];
+          const adjWolves = wolfCoords.filter(w => neighbors.includes(w)).length;
+
+          if (gIdx % 4 === 0) {
+            cell.clue = (adjWolves === 0) 
+              ? `風紀通報：我前後左右 4 個鄰座【完全沒有狼人】，全是普通同學！` 
+              : `我聽到周圍怪異狼喘聲，我的相鄰座位中藏著 ${adjWolves} 隻狼！`;
+          } else if (gIdx % 4 === 1) {
+            const femaleWolvesInCol = wolfCoords.filter(w => gridCells[w] && gridCells[w].col === c && gridCells[w].isFemale).length;
+            cell.clue = (femaleWolvesInCol === 0)
+              ? `我查過點名簿，【${c} 縱列】的所有女同學全部是無辜好人！`
+              : `放學目擊：【${c} 縱列】共有 ${colWolves} 個可疑的狼影露出馬腳！`;
+          } else if (gIdx % 4 === 2) {
+            cell.clue = `我從座位看過去，第【${r} 橫排】總共有 ${rowWolves} 隻狼人混入！`;
+          } else {
+            const otherGood = goodCoords.find(gc => gc !== coord);
+            cell.clue = otherGood 
+              ? `昨晚自習我和【${otherGood}】在一起，他絕對是正常同學！` 
+              : `第【${r} 排】有 ${rowWolves} 隻狼生！`;
+          }
+        });
+
+        disabledCoords.forEach(dc => {
+          gridCells[dc] = { coord: dc, disabled: true };
+        });
+
+        // 開局隨機挑選 3 個好人顯示對話氣泡
+        const initialClueCoords = [];
+        const shuffledGoods = [...goodCoords].sort(() => 0.5 - Math.sin(lvl * 5.1));
+        for (let i = 0; i < Math.min(3, shuffledGoods.length); i++) {
+          initialClueCoords.push(shuffledGoods[i]);
+        }
+
+        GAME_LEVELS.push({
+          levelId: lvl,
+          wolfCount: wolfNum,
+          totalValid: validCoords.length,
+          gridCells: gridCells,
+          initialClueCoords: initialClueCoords
+        });
+      }
+    })();
+
+    /* =====================================================================
+       3. 音效合成器與遊戲核心邏輯
+       ===================================================================== */
+    let currentLevelIndex = 0;
+    let revealedStatus = {};
+    let displayedClues = {};
+    let mistakes = 0;
+    let activeSelectingCoord = null;
+    let soundEnabled = true;
+
+    const SoundFx = {
+      ctx: null,
+      beep(freq, duration = 0.1, type = 'sine') {
+        if (!soundEnabled) return;
+        try {
+          if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = type;
+          osc.frequency.value = freq;
+          gain.gain.value = 0.15;
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + duration);
+        } catch(e) {}
+      },
+      click() { this.beep(440, 0.05, 'square'); },
+      goodReveal() { this.beep(587, 0.12, 'triangle'); },
+      wolfCaught() { this.beep(220, 0.25, 'sawtooth'); },
+      wrong() { this.beep(160, 0.35, 'sawtooth'); },
+      win() { [523, 659, 783, 1046].forEach((f, i) => setTimeout(() => this.beep(f, 0.18, 'triangle'), i * 80)); },
+      lose() { [320, 260, 200, 140].forEach((f, i) => setTimeout(() => this.beep(f, 0.25, 'sawtooth'), i * 90)); }
+    };
+
+    function toggleAudio() {
+      soundEnabled = !soundEnabled;
+      document.getElementById('audioBtn').innerText = soundEnabled ? '🔊' : '🔇';
+    }
+
+    function initLevel() {
+      const lvl = GAME_LEVELS[currentLevelIndex];
+      revealedStatus = {};
+      displayedClues = {};
+      mistakes = 0;
+      updateLivesUI();
+
+      lvl.initialClueCoords.forEach(c => {
+        displayedClues[c] = true;
+      });
+
+      document.getElementById('caseNavText').innerText = `第 ${lvl.levelId}/50 案`;
+      document.getElementById('boardCaseIndicator').innerText = `${lvl.levelId}/50`;
+      document.getElementById('wolvesRemaining').innerText = lvl.wolfCount;
+      document.getElementById('clearedCount').innerText = '0';
+      document.getElementById('totalCount').innerText = `/ ${lvl.totalValid}`;
+      document.getElementById('hintSpeaker').innerText = "班級推理起點：";
+      document.getElementById('hintQuote').innerText = `已有 3 位同學提供線索（帶 💬 氣泡），請點選課桌開始指認！`;
+
+      const gridBoard = document.getElementById('gridBoard');
+      gridBoard.innerHTML = '';
+
+      ROWS.forEach(r => {
+        COLS.forEach(c => {
+          const coord = `${c}${r}`;
+          const cellData = lvl.gridCells[coord];
+          const cellEl = document.createElement('div');
+
+          if (!cellData || cellData.disabled) {
+            cellEl.className = "w-full h-full rounded-xl bg-slate-800/40 border-2 border-slate-700/40 flex items-center justify-center opacity-40";
+            cellEl.innerHTML = `<span class="text-2xl text-slate-400">🚫</span>`;
+          } else {
+            cellEl.id = `card-${coord}`;
+            cellEl.className = "char-card rounded-xl p-1 flex flex-col justify-between items-center relative cursor-pointer shadow-md";
+            cellEl.onclick = () => onCardClicked(coord);
+
+            const hasBubble = displayedClues[coord] && cellData.clue;
+
+            cellEl.innerHTML = `
+              <div class="w-full flex justify-between items-center px-0.5 text-[9px] font-black text-slate-800">
+                <span class="font-mono">${coord}</span>
+                <span>${cellData.isFemale ? '♀️' : '♂️'}</span>
+              </div>
+              <div class="w-9 h-9 sm:w-11 sm:h-11 my-0.5 rounded-full overflow-hidden bg-slate-900/10 p-0.5" id="avatar-${coord}">
+                ${AVATARS[cellData.avatarKey] || AVATARS.student_f1}
+              </div>
+              <div class="w-full text-center text-[10px] sm:text-[11px] font-black bg-slate-900/20 text-slate-900 rounded py-0.2 truncate" id="name-${coord}">
+                ${cellData.name}
+              </div>
+              <div id="bubble-${coord}" class="bubble-tag absolute -bottom-1 -left-1 -right-1 text-[8px] text-sky-200 px-1 py-0.5 rounded-lg leading-tight truncate z-10 ${hasBubble ? '' : 'hidden'}">
+                💬 ${cellData.clue || ''}
+              </div>
+            `;
+          }
+
+          gridBoard.appendChild(cellEl);
+        });
+      });
+    }
+
+    function updateLivesUI() {
+      const remainingLives = Math.max(0, 3 - mistakes);
+      let hearts = '';
+      for (let i = 0; i < 3; i++) {
+        hearts += (i < remainingLives) ? '❤️' : '🖤';
+      }
+      document.getElementById('livesDisplay').innerText = hearts;
+    }
+
+    /* =====================================================================
+       4. 查驗與身分判斷
+       ===================================================================== */
+    function onCardClicked(coord) {
+      const cellData = GAME_LEVELS[currentLevelIndex].gridCells[coord];
+      if (!cellData || cellData.disabled) return;
+      
+      if (displayedClues[coord] && cellData.clue) {
+        document.getElementById('hintSpeaker').innerText = `【${coord}號】${cellData.name} 的發言：`;
+        document.getElementById('hintQuote').innerText = cellData.clue;
+      }
+
+      if (!revealedStatus[coord]) {
+        activeSelectingCoord = coord;
+        document.getElementById('actionModalAvatar').innerHTML = AVATARS[cellData.avatarKey] || AVATARS.student_f1;
+        document.getElementById('actionModalName').innerText = `${coord} 課桌 · ${cellData.name}`;
+        
+        const preview = (displayedClues[coord] && cellData.clue) 
+          ? `該同學發言：「${cellData.clue}」` 
+          : '尚未發言，請根據同班同學的線索交叉推敲其身份！';
+        document.getElementById('actionModalCluePreview').innerText = preview;
+
+        document.getElementById('actionModal').classList.remove('hidden');
+        SoundFx.click();
+      }
+    }
+
+    function closeActionModal() {
+      document.getElementById('actionModal').classList.add('hidden');
+      activeSelectingCoord = null;
+    }
+
+    function chooseIdentity(chosenType) {
+      if (!activeSelectingCoord) return;
+      const coord = activeSelectingCoord;
+      const cellData = GAME_LEVELS[currentLevelIndex].gridCells[coord];
+      closeActionModal();
+
+      const isActuallyWolf = cellData.isWolf;
+      const isGuessCorrect = (chosenType === 'wolf' && isActuallyWolf) || (chosenType === 'good' && !isActuallyWolf);
+
+      if (isGuessCorrect) {
+        if (isActuallyWolf) {
+          revealedStatus[coord] = 'wolf';
+          SoundFx.wolfCaught();
+          const cardEl = document.getElementById(`card-${coord}`);
+          cardEl.className = "char-card revealed-wolf rounded-xl p-1 flex flex-col justify-between items-center relative shadow-md";
+          document.getElementById(`avatar-${coord}`).innerHTML = AVATARS.wolf;
+          document.getElementById(`name-${coord}`).innerText = "🐺 偽裝狼人";
+          document.getElementById(`name-${coord}`).className = "w-full text-center text-[10px] sm:text-[11px] font-black bg-rose-800 text-white rounded py-0.2";
+          
+          const bubble = document.getElementById(`bubble-${coord}`);
+          if (bubble) bubble.classList.add('hidden');
+
+          document.getElementById('hintSpeaker').innerText = `【${coord}號】真面目暴露！`;
+          document.getElementById('hintQuote').innerText = `狼人同學露出了獠牙，已被成功驅逐出教室！`;
+        } else {
+          revealedStatus[coord] = 'good';
+          displayedClues[coord] = true;
+          SoundFx.goodReveal();
+
+          const cardEl = document.getElementById(`card-${coord}`);
+          cardEl.className = "char-card revealed-good rounded-xl p-1 flex flex-col justify-between items-center relative shadow-md";
+          
+          const bubble = document.getElementById(`bubble-${coord}`);
+          if (bubble && cellData.clue) {
+            bubble.innerText = `💬 ${cellData.clue}`;
+            bubble.classList.remove('hidden');
+          }
+
+          document.getElementById('hintSpeaker').innerText = `【${coord}號】${cellData.name} 提供新線索：`;
+          document.getElementById('hintQuote').innerText = cellData.clue || '這名同學證實了自己的清白！';
+        }
+
+        checkVictoryCondition();
+      } else {
+        mistakes++;
+        SoundFx.wrong();
+        updateLivesUI();
+
+        const board = document.getElementById('mainBoard');
+        board.classList.add('shake-anim');
+        setTimeout(() => board.classList.remove('shake-anim'), 400);
+
+        const errorMsg = (chosenType === 'wolf') 
+          ? `冤枉好人！${coord}號是無辜同學！` 
+          : `判斷失誤！${coord}號其實是潛伏在班上的狼人！`;
+
+        document.getElementById('hintSpeaker').innerText = `⚠️ 教室紀律處分 (${mistakes}/3)`;
+        document.getElementById('hintQuote').innerText = errorMsg;
+
+        if (mistakes >= 3) {
+          triggerDefeat();
+        }
+      }
+    }
+
+    function checkVictoryCondition() {
+      const lvl = GAME_LEVELS[currentLevelIndex];
+      const validTotal = lvl.totalValid;
+      const clearedNow = Object.keys(revealedStatus).length;
+      document.getElementById('clearedCount').innerText = clearedNow;
+
+      let remainingWolves = lvl.wolfCount;
+      Object.keys(revealedStatus).forEach(c => {
+        if (revealedStatus[c] === 'wolf') remainingWolves--;
+      });
+      document.getElementById('wolvesRemaining').innerText = Math.max(0, remainingWolves);
+
+      if (clearedNow >= validTotal) {
+        triggerVictory();
+      }
+    }
+
+    function triggerVictory() {
+      SoundFx.win();
+      saveClearedLevel(GAME_LEVELS[currentLevelIndex].levelId);
+      
+      const modal = document.getElementById('resultModal');
+      const box = document.getElementById('resultBox');
+      const emoji = document.getElementById('resultEmoji');
+      const title = document.getElementById('resultTitle');
+      const desc = document.getElementById('resultDesc');
+      const btn = document.getElementById('resultBtn');
+
+      box.className = "bg-slate-900 border-4 border-sky-400 w-full max-w-xs rounded-3xl p-5 text-center shadow-2xl";
+      emoji.innerText = "🏆";
+      title.innerText = "班級破案！全員查清！";
+      title.className = "text-xl font-black text-sky-400 comic-font mb-1";
+      desc.innerText = "太優秀了！你守護了教室的安全，抓出了所有偽裝成同學的狼人！";
+      btn.innerText = "下一節課（下一案）➔";
+      btn.className = "w-full py-2.5 bg-gradient-to-r from-sky-400 to-indigo-500 text-slate-950 font-black rounded-xl text-sm comic-font shadow-md";
+
+      modal.classList.remove('hidden');
+    }
+
+    function triggerDefeat() {
+      SoundFx.lose();
+      const modal = document.getElementById('resultModal');
+      const box = document.getElementById('resultBox');
+      const emoji = document.getElementById('resultEmoji');
+      const title = document.getElementById('resultTitle');
+      const desc = document.getElementById('resultDesc');
+      const btn = document.getElementById('resultBtn');
+
+      box.className = "bg-slate-900 border-4 border-rose-500 w-full max-w-xs rounded-3xl p-5 text-center shadow-2xl";
+      emoji.innerText = "💔";
+      title.innerText = "放學危機！三次失誤！";
+      title.className = "text-xl font-black text-rose-500 comic-font mb-1";
+      desc.innerText = "失誤次數達到 3 次，狼人趁亂襲擊了教室！請重新整理思緒再次挑戰。";
+      btn.innerText = "重考本案 🔄";
+      btn.className = "w-full py-2.5 bg-gradient-to-r from-rose-500 to-red-600 text-white font-black rounded-xl text-sm comic-font shadow-md";
+
+      modal.classList.remove('hidden');
+    }
+
+    function onResultBtnClick() {
+      document.getElementById('resultModal').classList.add('hidden');
+      if (mistakes >= 3) {
+        initLevel();
+      } else {
+        if (currentLevelIndex < GAME_LEVELS.length - 1) {
+          currentLevelIndex++;
+          initLevel();
+        } else {
+          alert("畢業榮耀！全數 50 關校園推理迷案全數偵破！");
+        }
+      }
+    }
+
+    /* =====================================================================
+       5. 關卡選單與進度存檔
+       ===================================================================== */
+    function toggleLevelModal() {
+      const modal = document.getElementById('levelModal');
+      modal.classList.toggle('hidden');
+      if (!modal.classList.contains('hidden')) {
+        renderLevelSelector();
+      }
+    }
+
+    function renderLevelSelector() {
+      const container = document.getElementById('levelGridContainer');
+      container.innerHTML = '';
+      const cleared = getClearedLevels();
+
+      for (let i = 1; i <= 50; i++) {
+        const btn = document.createElement('button');
+        const isCurrent = (i - 1) === currentLevelIndex;
+        const isDone = cleared.includes(i);
+
+        btn.className = `p-2 rounded-xl font-bold font-mono text-xs flex flex-col items-center justify-center border ${
+          isCurrent 
+            ? 'bg-sky-400 text-slate-950 border-sky-300' 
+            : isDone 
+              ? 'bg-emerald-800/80 text-emerald-200 border-emerald-500' 
+              : 'bg-slate-800 text-slate-400 border-slate-700'
+        }`;
+        btn.innerHTML = `<span>${i}</span><span>${isDone ? '⭐' : ''}</span>`;
+        btn.onclick = () => {
+          currentLevelIndex = i - 1;
+          initLevel();
+          toggleLevelModal();
+        };
+        container.appendChild(btn);
+      }
+    }
+
+    function getClearedLevels() {
+      try {
+        return JSON.parse(localStorage.getItem('werewolf_revealed_cleared') || '[]');
+      } catch(e) { return []; }
+    }
+
+    function saveClearedLevel(lvlId) {
+      const list = getClearedLevels();
+      if (!list.includes(lvlId)) {
+        list.push(lvlId);
+        localStorage.setItem('werewolf_revealed_cleared', JSON.stringify(list));
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initLevel();
+    });
+  </script>
+</body>
+</html>
